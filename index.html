@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Modern Art — Demo v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#18160F;--ink2:#3D3A30;--ink3:#8A8070;
+  --gold:#C49A1E;--gold2:#E2B530;--goldl:#FDF3CC;
+  --cream:#FDFAF3;--cream2:#F4EDD8;--cream3:#E4D9C0;
+  --dark:#1A1814;--dark2:#252015;--dark3:#302C1C;
+  --red:#C03030;--green:#1E7A48;
+  --r:10px;--r2:16px;
+  /* Player name colors - distinct from artist colors */
+  --pn0:#1560B8;--pn1:#7B3590;--pn2:#A02020;--pn3:#166038;--pn4:#B06010;
+}
+body{background:var(--cream);color:var(--ink);font-family:'Outfit',sans-serif;font-size:14px;overflow-x:hidden}
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+
+/* ── SETUP ── */
+#setup{background:var(--dark);align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden}
+#setup::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent 0 40px,rgba(196,154,30,.025) 40px 41px);pointer-events:none}
+.sw-wrap{max-width:480px;width:100%;position:relative;z-index:1}
+.sw-logo{font-family:'Cormorant Garamond',serif;font-size:3.2rem;color:var(--gold2);letter-spacing:.04em;line-height:1;margin-bottom:.1rem}
+.sw-sub{color:rgba(255,255,255,.25);font-size:.75rem;letter-spacing:.13em;text-transform:uppercase;margin-bottom:2rem}
+.sl{color:rgba(255,255,255,.38);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;margin:.1rem 0 .55rem;margin-top:1.3rem}
+.pill-row{display:flex;gap:.4rem}
+.pill{flex:1;padding:.52rem;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.38);border-radius:8px;cursor:pointer;font-family:'Outfit',sans-serif;font-size:.85rem;transition:all .18s}
+.pill.on{background:rgba(196,154,30,.18);border-color:var(--gold2);color:var(--gold2);font-weight:600}
+.diff-list{display:flex;flex-direction:column;gap:.32rem}
+.diff-item{padding:.58rem .9rem;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);border-radius:8px;cursor:pointer;color:rgba(255,255,255,.42);font-size:.8rem;transition:all .18s;display:flex;align-items:center;gap:.65rem}
+.diff-item.on{border-color:var(--gold2);background:rgba(196,154,30,.1);color:var(--gold2)}
+.go-btn{margin-top:1.8rem;width:100%;padding:.95rem;background:var(--gold);border:none;border-radius:10px;color:var(--dark);font-family:'Outfit',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;letter-spacing:.05em;transition:all .2s}
+.go-btn:hover{background:var(--gold2);transform:translateY(-1px)}
+
+/* ── GAME ── */
+#game{background:#EDEADF;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{background:var(--dark);display:flex;align-items:center;gap:.7rem;padding:.42rem .8rem;flex-shrink:0}
+.tb-logo{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--gold2)}
+.tb-chip{background:rgba(255,255,255,.07);border-radius:5px;padding:.18rem .55rem;font-size:.68rem;color:rgba(255,255,255,.45);letter-spacing:.05em}
+.tb-sp{flex:1}
+.ev-row{display:flex;align-items:center;gap:.35rem;cursor:pointer;user-select:none;font-size:.68rem;color:rgba(255,255,255,.4)}
+.sw-tog{width:26px;height:15px;background:rgba(255,255,255,.12);border-radius:99px;position:relative;transition:background .2s;flex-shrink:0}
+.sw-tog.on{background:var(--gold)}
+.sw-tog::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:white;transition:transform .2s}
+.sw-tog.on::after{transform:translateX(11px)}
+.tb-btn{padding:.27rem .65rem;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:transparent;color:rgba(255,255,255,.38);font-family:'Outfit',sans-serif;font-size:.68rem;cursor:pointer;transition:all .15s}
+.tb-btn:hover{color:rgba(255,255,255,.68);border-color:rgba(255,255,255,.28)}
+.game-body{flex:1;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;gap:.45rem;padding:.45rem .55rem 0}
+
+/* MARKET */
+.mboard{display:grid;grid-template-columns:repeat(5,1fr);gap:.32rem}
+.a-tile{background:#FFFEF8;border-radius:var(--r);overflow:hidden;border:1px solid var(--cream3);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.a-head{padding:.3rem .4rem;display:flex;align-items:baseline;justify-content:space-between;gap:.2rem}
+.a-hname{font-family:'Playfair Display',serif;font-size:.7rem;color:white;letter-spacing:.01em;line-height:1.15}
+.a-hval{font-size:.72rem;font-weight:700;color:rgba(255,255,255,.95);white-space:nowrap;flex-shrink:0}
+.a-body{padding:.2rem .4rem .18rem}
+.a-cnt-row{display:flex;align-items:baseline;gap:.18rem}
+.a-cnt{font-size:1.3rem;font-weight:700;line-height:1}
+.a-max{font-size:.58rem;color:var(--ink3)}
+.a-total{font-size:.58rem;color:var(--ink3);display:block;margin-top:1px}
+.a-pips{display:flex;gap:2px;margin:.22rem 0 .1rem}
+.pip{width:8px;height:8px;border-radius:50%;background:#E0D8C8;transition:all .3s}
+.pip.out{background:currentColor}
+.a-rounds{display:flex;gap:2px;padding:.2rem .4rem;background:#F5F0E4;border-top:1px solid var(--cream3)}
+.rchip{flex:1;text-align:center;font-size:.56rem;font-weight:600;border-radius:3px;padding:1px 0;color:white;background:rgba(0,0,0,.14)}
+/* Estimated round value — dashed border to signal uncertainty */
+.a-est{font-size:.58rem;font-weight:600;color:var(--ink3);margin-left:auto;padding:1px 4px;border:1px dashed var(--ink3);border-radius:4px;letter-spacing:.02em;white-space:nowrap;opacity:.75}
+
+/* CENTER grid: players | auction | bid-col */
+.center{display:grid;grid-template-columns:160px 1fr 168px;gap:.45rem;overflow:hidden}
+
+/* PLAYER COLUMN */
+.player-col{display:flex;flex-direction:column;gap:.3rem;overflow-y:auto}
+.p-tile{background:#FFFEF8;border-radius:var(--r);padding:.4rem .48rem;border:2px solid var(--cream3);transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.p-tile.cur{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 2px 8px rgba(196,154,30,.18)}
+.p-tile.human-tile{background:linear-gradient(135deg,#FEFAF0,#FFFEF8);border-color:#D4C090}
+.pt-top{display:flex;align-items:center;gap:.4rem;margin-bottom:.22rem}
+.pt-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:white;flex-shrink:0}
+/* player name: larger, darker, clearly readable */
+.pt-name{font-size:.88rem;font-weight:700;line-height:1.15;color:var(--ink)}
+.pt-sub{font-size:.6rem;color:var(--ink3);line-height:1.2;margin-top:1px}
+/* Big prominent money display — inline with name */
+.pt-money-inline{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:700;color:var(--gold);line-height:1;letter-spacing:.01em;white-space:nowrap}
+/* Thinking bubble for AI players */
+.pt-thinking{display:flex;gap:3px;padding:.3rem .4rem;margin-top:.2rem}
+.pt-thinking span{width:6px;height:6px;border-radius:50%;background:var(--ink3);animation:thinkpulse 1s ease-in-out infinite}
+.pt-thinking span:nth-child(2){animation-delay:.2s}
+.pt-thinking span:nth-child(3){animation-delay:.4s}
+@keyframes thinkpulse{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.pt-arts{display:flex;flex-wrap:wrap;gap:2px;min-height:12px}
+.abadge{font-size:.58rem;padding:1px 5px;border-radius:4px;font-weight:600}
+/* Collected cards display - bigger */
+.pt-collection{display:flex;flex-wrap:wrap;gap:3px;margin-top:.25rem}
+.coll-card{width:24px;height:36px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;color:white;box-shadow:0 1px 4px rgba(0,0,0,.3);flex-shrink:0}
+.coll-card .cc-a{font-size:.6rem;font-weight:700;text-align:center;line-height:1}
+
+/* AUCTION CENTER */
+.abox{background:#FFFEF8;border-radius:var(--r2);border:1px solid var(--cream3);display:flex;flex-direction:column;overflow:hidden;min-height:0;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+.abox-head{background:var(--dark3);padding:.48rem .75rem;display:flex;align-items:center;gap:.45rem;flex-shrink:0}
+.abox-title{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--gold2);flex:1}
+.atype-bdg{font-size:.62rem;font-weight:600;padding:.18rem .5rem;border-radius:99px}
+.timer-track{height:3px;background:rgba(0,0,0,.2);overflow:hidden;flex-shrink:0}
+.timer-fill{height:100%;background:var(--gold);transition:width .5s linear}
+.timer-fill.urgent{background:var(--red)}
+.abox-body{flex:1;padding:.6rem .65rem;overflow-y:auto;display:flex;flex-direction:column;gap:.42rem;min-height:0}
+
+/* live bid banner */
+.live-bid-banner{background:linear-gradient(135deg,var(--dark3),#1A1810);border-radius:8px;padding:.42rem .65rem;display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+.lbb-left{display:flex;flex-direction:column;gap:0}
+.lbb-label{font-size:.6rem;color:rgba(255,255,255,.38);letter-spacing:.07em;text-transform:uppercase}
+.lbb-amount{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:var(--gold2);line-height:1}
+.lbb-leader{font-size:.72rem;color:rgba(255,255,255,.58);margin-left:auto;text-align:right;line-height:1.4}
+.lbb-leading-you{font-size:.68rem;color:#58E8A0;font-weight:600;margin-left:auto}
+
+/* painting card display */
+.pcards-row{display:flex;gap:.5rem;flex-wrap:wrap}
+.pcard{width:68px;height:98px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.38rem;color:white;font-size:.6rem;font-weight:600;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.25);flex-shrink:0;position:relative;transition:transform .3s,box-shadow .3s}
+.pcard.fly-out{transform:scale(.85) translateY(-6px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.pcard .pc-a{font-family:'Playfair Display',serif;font-size:.72rem;font-weight:700;margin-bottom:3px;line-height:1.1}
+.pcard .pc-t{font-size:.56rem;opacity:.82}
+.pcard .pc-ev{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:.55rem;background:rgba(0,0,0,.38);border-radius:0 0 7px 7px;padding:2px}
+
+/* bid history */
+.bid-hist{display:flex;flex-direction:column;gap:2px;max-height:64px;overflow-y:auto}
+.bh-row{display:flex;align-items:center;gap:.35rem;font-size:.7rem;padding:.5px 0}
+.bh-amt{font-weight:700;color:var(--gold)}
+
+/* EV panel */
+.ev-panel{background:var(--goldl);border-radius:8px;padding:.38rem .58rem;border:1px solid rgba(196,154,30,.28);flex-shrink:0}
+.ev-title{font-size:.6rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--gold);margin-bottom:.22rem}
+.ev-rows{display:flex;flex-direction:column;gap:2px}
+.ev-r{display:flex;justify-content:space-between;font-size:.67rem}
+.ev-l{color:var(--ink2)}
+.ev-v{font-weight:600;color:var(--ink)}
+
+/* BID COLUMN — anchored to bottom */
+.bid-col{display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.bid-col-inner{background:#FFFEF8;border-radius:var(--r2);border:1px solid var(--cream3);padding:.6rem .55rem .65rem;display:flex;flex-direction:column;gap:.48rem;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+.bc-title{font-size:.65rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
+.bid-display{background:linear-gradient(135deg,var(--dark3),var(--dark2));border-radius:8px;padding:.45rem .4rem;text-align:center}
+.bid-display-num{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:700;color:var(--gold2);line-height:1}
+.bid-display-sub{font-size:.62rem;color:rgba(255,255,255,.38);margin-top:2px}
+.step-grid{display:grid;grid-template-columns:1fr 1fr;gap:.3rem}
+.sbtn{padding:.52rem .3rem;border:1.5px solid #C8BFA8;background:#FDFAF3;border-radius:7px;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--ink2);transition:all .15s;font-family:'Outfit',sans-serif;text-align:center}
+.sbtn:hover{background:var(--goldl);border-color:var(--gold);color:var(--gold)}
+.sbtn:active{transform:scale(.92)}
+.sbtn.neg{color:var(--red);border-color:#E0C0C0}
+.sbtn.neg:hover{background:#FFF0F0;border-color:var(--red)}
+.confirm-btn{padding:.62rem;background:var(--gold);border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;color:var(--dark);transition:all .15s;width:100%;letter-spacing:.03em}
+.confirm-btn:hover{background:var(--gold2);transform:translateY(-1px)}
+.pass-btn{padding:.48rem;background:#EDE5D0;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--ink2);transition:all .15s;width:100%}
+.pass-btn:hover{background:var(--cream3)}
+.buy-btn{padding:.62rem;background:var(--green);border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;color:white;transition:all .15s;width:100%}
+.buy-btn:hover{background:#227A50}
+.bid-note{font-size:.68rem;color:var(--ink3);text-align:center;min-height:13px;line-height:1.4}
+
+/* card fly animation */
+@keyframes flyToPlayer{0%{opacity:1;transform:scale(1) translate(0,0)}70%{transform:scale(1.1) translate(var(--fx),var(--fy))}100%{opacity:0;transform:scale(.6) translate(var(--fx),var(--fy))}}
+.pcard.flying{animation:flyToPlayer 1.2s ease-in-out forwards}
+
+/* LOG */
+.log-wrap{background:var(--dark2);height:100px;overflow-y:auto;padding:.35rem .7rem;flex-shrink:0;border-top:2px solid var(--dark)}
+.log-line{font-size:.7rem;color:rgba(255,255,255,.3);line-height:1.9;display:flex;gap:.45rem;align-items:baseline}
+.log-line.mine{color:rgba(226,181,48,.9)}
+.log-line.sys{color:rgba(255,255,255,.72);font-weight:500}
+.log-line.won{color:#58E8A0;font-weight:600}
+.log-line.sold{color:#FFB040;font-weight:600}
+.log-dot{width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0;margin-top:7px}
+
+/* HAND */
+.hand{background:var(--dark3);padding:.42rem .55rem;flex-shrink:0;border-top:2px solid var(--dark)}
+.hand-hdr{display:flex;align-items:center;gap:.7rem;margin-bottom:.38rem}
+.hand-lbl{font-size:.62rem;color:rgba(255,255,255,.28);letter-spacing:.08em;text-transform:uppercase}
+.hand-sp{flex:1}
+.play-btn{padding:.32rem .95rem;background:var(--gold);border:none;border-radius:6px;color:var(--dark);font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s}
+.play-btn:hover:not(:disabled){background:var(--gold2)}
+.play-btn:disabled{opacity:.28;cursor:not-allowed}
+.hand-cards{display:flex;gap:.38rem;overflow-x:auto;padding-bottom:.2rem;justify-content:flex-end}
+/* hand card: name moved UP, bigger overall */
+.hcard{min-width:54px;height:84px;border-radius:7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:.28rem .28rem .22rem;color:white;box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .15s,box-shadow .15s,border-color .15s;flex-shrink:0;border:2px solid transparent;position:relative;justify-content:flex-start;padding-top:.55rem}
+.hcard:hover{transform:translateY(-5px);box-shadow:0 6px 14px rgba(0,0,0,.35)}
+.hcard.sel{border-color:var(--gold2);transform:translateY(-8px);box-shadow:0 8px 18px rgba(0,0,0,.42)}
+.hcard .hc-n{font-size:.62rem;font-weight:700;text-align:center;line-height:1.2;margin-bottom:2px}
+.hcard .hc-t{font-size:.54rem;opacity:.78;text-align:center}
+.hcard .hc-ev{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:.52rem;background:rgba(0,0,0,.35);border-radius:0 0 5px 5px;padding:2px;color:rgba(255,255,255,.88)}
+
+/* RESULT */
+#result{background:var(--dark);align-items:center;justify-content:center;padding:2rem}
+.res-box{max-width:440px;width:100%;text-align:center}
+.res-title{font-family:'Cormorant Garamond',serif;font-size:3rem;color:var(--gold2);margin-bottom:.15rem}
+.res-sub{color:rgba(255,255,255,.25);font-size:.75rem;letter-spacing:.1em;margin-bottom:2rem}
+.res-row{display:flex;align-items:center;gap:.8rem;padding:.65rem .9rem;background:rgba(255,255,255,.05);border-radius:10px;margin-bottom:.42rem;border:1px solid rgba(255,255,255,.07)}
+.res-row.winner{background:rgba(196,154,30,.12);border-color:rgba(196,154,30,.35)}
+.rr-rk{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:700;flex-shrink:0}
+.rr-info{flex:1;text-align:left}
+.rr-name{font-weight:600;font-size:.95rem}
+.rr-arts{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
+.rr-abadge{font-size:.6rem;padding:1px 5px;border-radius:4px;font-weight:600;color:white}
+.rr-money{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--gold2)}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal.show{opacity:1;pointer-events:all}
+.mbox{background:white;border-radius:var(--r2);padding:1.6rem;max-width:400px;width:93%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto}
+.m-icon{font-size:2rem;margin-bottom:.42rem}
+.m-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--dark);margin-bottom:.35rem}
+.m-body{font-size:.83rem;color:var(--ink2);line-height:1.58;margin-bottom:.6rem;white-space:pre-line}
+.m-btns{display:flex;flex-direction:column;gap:.38rem}
+.mbtn{padding:.56rem;border:none;border-radius:8px;font-family:'Outfit',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;transition:all .15s}
+.mbtn.pri{background:var(--gold);color:var(--dark)}
+.mbtn.sec{background:var(--cream2);color:var(--ink2)}
+.mbtn.red{background:var(--red);color:white}
+
+/* round summary in modal */
+.rs-header{font-size:.68rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;text-align:left}
+.rs-row{display:flex;align-items:center;gap:.55rem;padding:.5rem .55rem;border-radius:8px;margin-bottom:.32rem;background:var(--cream2);border:1px solid var(--cream3)}
+.rs-row.gain{background:#EDFAF3;border-color:#B8E8CA}
+.rs-rank{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:white;flex-shrink:0}
+.rs-name{flex:1;font-size:.85rem;font-weight:600;text-align:left}
+.rs-gain{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:700;color:var(--green);white-space:nowrap}
+.rs-zero{font-size:.8rem;color:var(--ink3)}
+
+.wait-notice{font-size:.72rem;color:var(--ink3);font-style:italic;text-align:center;padding:.5rem;animation:fadepulse 1.2s ease-in-out infinite}
+@keyframes fadepulse{0%,100%{opacity:.4}50%{opacity:1}}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--cream3);border-radius:99px}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup" class="screen active">
+  <div class="sw-wrap">
+    <div class="sw-logo">Modern Art</div>
+    <div class="sw-sub">High Stakes Bidding in the Galleries</div>
+    <!-- BETA: 人數固定 4 人，隱藏選擇器。還原方式：移除下方 display:none，移除 startGame() 中的 C.num=4 -->
+    <div class="pill-row" id="num-row" style="display:none">
+      <button class="pill" onclick="C.num=3;syncPills()">3 人</button>
+      <button class="pill on" onclick="C.num=4;syncPills()">4 人</button>
+      <button class="pill" onclick="C.num=5;syncPills()">5 人</button>
+    </div>
+    <div class="sl">選擇挑戰等級</div>
+    <div class="diff-list">
+      <!-- BETA: 難度描述改為挑戰導向。還原方式：換回原文字 -->
+      <div class="diff-item on" onclick="C.diff='easy';syncDiff()">🎲 輕鬆上手 — 適合第一次玩，感受拍賣節奏</div>
+      <div class="diff-item" onclick="C.diff='normal';syncDiff()">🎴 初階挑戰 — 有點壓力，需要稍微想一下</div>
+      <div class="diff-item" onclick="C.diff='hard';syncDiff()">🧠 進階對手 — 會算牌、會搶攻，不好對付</div>
+      <div class="diff-item" onclick="C.diff='expert';syncDiff()">📐 強力競爭 — 精打細算，每一分錢都不讓你佔到</div>
+      <div class="diff-item" onclick="C.diff='genius';syncDiff()">🔮 頂尖高手 — 讀得懂你的手牌，全盤佈局</div>
+    </div>
+    <!-- BETA: 進階設定隱藏，AI 思考延遲預設開啟。還原方式：移除下方 display:none -->
+    <div style="display:none">
+      <div class="sl" style="margin-top:1.2rem">進階設定</div>
+      <div style="display:flex;align-items:center;gap:.7rem;padding:.55rem .8rem;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.025);cursor:pointer" onclick="C.aiThink=!C.aiThink;syncThink()">
+        <div class="sw-tog on" id="think-sw" style="flex-shrink:0"></div>
+        <div>
+          <div style="font-size:.82rem;color:rgba(255,255,255,.7)">AI 思考延遲</div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.35)">AI 出牌前有思考停頓，超過 1 秒時顯示「…」</div>
+        </div>
+      </div>
+    </div>
+    <button class="go-btn" onclick="startGame()">開始競標 →</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div class="topbar">
+    <div class="tb-logo">Modern Art</div>
+    <div class="tb-chip" id="tb-round">第 1 回合</div>
+    <div class="tb-sp"></div>
+    <!-- BETA: EV 開關隱藏。還原方式：移除 display:none，移除下方隱藏觸發區 -->
+    <label class="ev-row" onclick="toggleEV()" style="display:none">
+      <div class="sw-tog" id="ev-sw"></div><span>期望值</span>
+    </label>
+    <!-- 隱藏觸發區：連點三次呼出 EV 開關。還原時可移除此區塊 -->
+    <div id="ev-secret" onclick="handleSecretTap()"
+         style="width:28px;height:28px;cursor:default;flex-shrink:0;opacity:0"
+         title=""></div>
+    <button class="tb-btn" onclick="confirmQuit()">退出</button>
+  </div>
+  <div class="game-body">
+    <div class="mboard" id="mboard"></div>
+    <div class="center">
+      <div class="player-col" id="player-col"></div>
+      <div class="abox">
+        <div class="abox-head">
+          <div class="abox-title" id="ac-title">等待出牌…</div>
+          <div class="atype-bdg" id="ac-badge" style="display:none"></div>
+        </div>
+        <div class="timer-track"><div class="timer-fill" id="t-fill" style="width:100%"></div></div>
+        <div class="abox-body" id="ac-body"><div class="wait-notice">選一張手牌出牌</div></div>
+      </div>
+      <div class="bid-col">
+        <div id="bid-controls" style="display:none" class="bid-col-inner"></div>
+      </div>
+    </div>
+    <div class="log-wrap" id="log"></div>
+  </div>
+  <div class="hand">
+    <div class="hand-hdr">
+      <div class="hand-lbl">手牌 <span id="hcnt" style="color:rgba(255,255,255,.2)"></span></div>
+      <div class="hand-sp"></div>
+      <button class="play-btn" id="play-btn" disabled onclick="playSelected()">出牌拍賣</button>
+    </div>
+    <div class="hand-cards" id="hand-cards"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="result" class="screen">
+  <div class="res-box">
+    <div class="res-title">拍賣落槌</div>
+    <div class="res-sub">FOUR ROUNDS COMPLETE</div>
+    <div id="res-list"></div>
+    <button class="replay" style="margin-top:1.5rem;padding:.78rem 1.8rem;background:var(--gold);border:none;border-radius:10px;color:var(--dark);font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer" onclick="location.reload()">再來一局</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="mbox">
+    <div class="m-icon" id="m-icon"></div>
+    <div class="m-title" id="m-title"></div>
+    <div class="m-body" id="m-body"></div>
+    <div id="m-extra"></div>
+    <div class="m-btns" id="m-btns"></div>
+  </div>
+</div>
+
+<script>
+// ══ CONSTANTS ══════════════════════════════════
+const ARTISTS=['Mira Voss','Kenji','Cleo Stark','Ran Ortiz','Domu'];
+const ASHORT=['MV','KJ','CS','RO','DM'];
+// Artist colors (saturated for cards)
+const ACOL=['#6B2E85','#B03028','#C07010','#1A6840','#1550A0'];
+// Player name colors — separate palette, clearly readable, no overlap with artist colors
+const PNCOL=['#1865C0','#8B34A0','#B02020','#167848','#C06018'];
+const TYPES=['open','sealed','once','fixed','double'];
+const TL={open:'公開',sealed:'暗標',once:'依序',fixed:'定價',double:'雙重'};
+const TC={open:'#6B2E85',sealed:'#B03028',once:'#1A6840',fixed:'#1550A0',double:'#C07010'};
+const ADIST=[[2,2,2,3,3],[2,3,3,2,3],[2,3,3,3,3],[3,3,3,3,3],[3,3,3,3,4]];
+const ATOTAL=ADIST.map(d=>d.reduce((a,b)=>a+b,0));
+const RDEAL={3:[10,6,6,0],4:[9,4,4,0],5:[8,3,3,0]};
+const RVAL=[30,20,10,0,0];
+const NAMES={
+  easy:['Mimi','Percy','Dodo','Lulu','Benny','Rosie'],
+  normal:['Marco','Elena','Oliver','Nadia','Felix'],
+  hard:['Sterling','Vivienne','Aldous','Ingrid','Caspian'],
+  expert:['Axiom','Quant','Sigma','Vector','Prism'],
+  genius:['Oracle','Cipher','Apex','Nexus','Zeta']
+};
+
+// ══ STATE ══════════════════════════════════════
+let C={num:4,diff:'easy',aiThink:true};
+let G=null;
+let selIdx=null;
+let evOn=false;
+let timerID=null;
+let autoPassTimer=null;
+let phase='idle';
+let _dc=null; // double card temp
+
+// BETA: 三連擊解鎖 EV 開關 ─────────────────────
+// 還原方式：移除此區塊（_secretTaps, _secretTimer, handleSecretTap）
+let _secretTaps=0, _secretTimer=null;
+function handleSecretTap(){
+  _secretTaps++;
+  if(_secretTimer) clearTimeout(_secretTimer);
+  _secretTimer = setTimeout(()=>{ _secretTaps=0; }, 900);
+  if(_secretTaps>=3){
+    _secretTaps=0;
+    const evRow = document.querySelector('.ev-row');
+    if(evRow){
+      const isHidden = evRow.style.display==='none';
+      evRow.style.display = isHidden ? 'flex' : 'none';
+      if(isHidden){
+        // 短暫閃爍提示已解鎖
+        evRow.style.outline='1px solid var(--gold)';
+        setTimeout(()=>{ evRow.style.outline=''; }, 600);
+      }
+    }
+  }
+}
+// ─────────────────────────────────────────────
+
+function syncPills(){document.querySelectorAll('#num-row .pill').forEach((b,i)=>b.classList.toggle('on',i===C.num-3));}
+function syncDiff(){const ds=['easy','normal','hard','expert','genius'];document.querySelectorAll('.diff-item').forEach((b,i)=>b.classList.toggle('on',ds[i]===C.diff));}
+function syncThink(){document.getElementById('think-sw').classList.toggle('on',C.aiThink);}
+function toggleEV(){
+  evOn=!evOn;
+  document.getElementById('ev-sw').classList.toggle('on',evOn);
+  renderHand();
+  const evEl=document.getElementById('auction-ev');
+  if(evEl) evEl.style.display=evOn?'':'none';
+  if(evOn) updateAuctionEV();
+  document.querySelectorAll('.pcard .pc-ev').forEach(el=>{
+    el.style.display=evOn?'':'none';
+  });
+}
+
+// ══ DECK ═══════════════════════════════════════
+function buildDeck(){
+  let d=[];
+  ARTISTS.forEach((_,ai)=>TYPES.forEach((type,ti)=>{
+    for(let i=0;i<ADIST[ai][ti];i++) d.push({ai,type,id:d.length});
+  }));
+  return shuffle(d);
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function randName(diff,used){const p=NAMES[diff];const a=p.filter(n=>!used.includes(n));return(a.length?a:p)[Math.floor(Math.random()*(a.length||p.length))];}
+
+// ══ INIT ═══════════════════════════════════════
+function startGame(){
+  // BETA: 固定 4 人局。還原方式：移除下行
+  C.num=4;
+  const n=C.num;
+  const usedN=[];
+  G={
+    round:1,turnIdx:0,n,
+    players:Array.from({length:n},(_,i)=>{
+      const name=i===0?'你':randName(C.diff,usedN);
+      if(i>0)usedN.push(name);
+      return{name,color:PNCOL[i],human:i===0,money:100,hand:[],bought:[]};
+    }),
+    deck:buildDeck(),
+    mvals:ARTISTS.map(()=>[]),
+    rOut:ARTISTS.map(()=>0),
+    aOut:ARTISTS.map(()=>0),
+    auction:null,
+    // Item 8: track each player's auction earnings per round (sold - bought)
+    roundEarnings:Array.from({length:n},()=>0),
+  };
+  dealRound();
+  showScreen('game');
+  renderAll();
+  nextTurn();
+}
+function dealRound(){
+  const per=RDEAL[G.n][G.round-1];if(per===0)return;
+  G.players.forEach(p=>{for(let i=0;i<per&&G.deck.length;i++)p.hand.push(G.deck.pop());p.hand.sort((a,b)=>a.ai-b.ai);});
+}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+// ══ RENDER ═════════════════════════════════════
+function renderAll(){
+  renderMarket();renderPlayers();renderHand();
+  document.getElementById('tb-round').textContent=`第 ${G.round} 回合`;
+}
+
+function renderMarket(){
+  // Compute correct current ranking with tie-breaker:
+  // Sort by (out DESC, aOut ASC) — more cards wins; if equal, earlier artist wins
+  const rankOrder = ARTISTS.map((_,ai)=>({ai, out:G.rOut[ai], aOut:G.aOut[ai]}))
+    .filter(x=>x.out>0)
+    .sort((a,b)=>b.out-a.out || a.aOut-b.aOut);
+  // Map each artist to its current estimated rank (0-indexed), -1 if not placed
+  const estRank = ARTISTS.map((_,ai)=>{
+    const pos = rankOrder.findIndex(x=>x.ai===ai);
+    return pos; // -1 if out=0
+  });
+
+  document.getElementById('mboard').innerHTML=ARTISTS.map((_,ai)=>{
+    const col=ACOL[ai],out=G.rOut[ai],cv=G.mvals[ai].reduce((a,b)=>a+b,0);
+    const pips=Array.from({length:5},(_,i)=>`<div class="pip${i<out?' out':''}" style="color:${col}"></div>`).join('');
+    const chips=Array.from({length:4},(_,i)=>{const v=G.mvals[ai][i]||0;const bg=v===30?'#B8912A':v===20?'#6A8AA4':v===10?'#8A7B5A':'rgba(0,0,0,.12)';return `<div class="rchip" style="background:${bg}">${v||'·'}</div>`;}).join('');
+
+    // Estimated rank value using correct tie-breaker ranking
+    let estHTML = '';
+    if(out>0){
+      const rank = estRank[ai]; // 0=1st, 1=2nd, 2=3rd, 3+=no prize
+      const rankVal = rank>=0 && rank<=2 ? RVAL[rank] : 0;
+      const estTotal = cv + rankVal;
+      // Show rank indicator (🥇🥈🥉) only if 4+ cards (fairly locked in)
+      const rankBadge = out>=4 ? ['🥇','🥈','🥉',''][Math.min(rank,3)] : '';
+      estHTML = `<div class="a-est" title="預估本輪排名與價值（虛線代表仍可變動）">${rankBadge}$${estTotal}</div>`;
+    }
+
+    return `<div class="a-tile">
+      <div class="a-head" style="background:${col}">
+        <span class="a-hname">${ARTISTS[ai]}</span>
+      </div>
+      <div class="a-body">
+        <div class="a-cnt-row">
+          <span class="a-cnt" style="color:${col}">${out}</span>
+          <span class="a-max">/5</span>
+          ${estHTML}
+        </div>
+        <span class="a-total">共 ${G.aOut[ai]}/${ATOTAL[ai]}</span>
+        <div class="a-pips">${pips}</div>
+      </div>
+      <div class="a-rounds">${chips}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPlayers(){
+  document.getElementById('player-col').innerHTML=G.players.map((p,pid)=>{
+    const cur=G.turnIdx===pid;
+    // Collection cards — larger visual
+    const collCards=p.bought.map(c=>`<div class="coll-card" style="background:${ACOL[c.ai]}" title="${ARTISTS[c.ai]}"><div class="cc-a">${ASHORT[c.ai]}</div></div>`).join('');
+    const artsRow=ARTISTS.map((_,ai)=>{const cnt=p.bought.filter(c=>c.ai===ai).length;return cnt?`<span class="abadge" style="background:${ACOL[ai]}22;color:${ACOL[ai]}">${ASHORT[ai]}×${cnt}</span>`:''}).join('');
+    if(p.human){
+      return `<div class="p-tile human-tile${cur?' cur':''}" id="ptile-0">
+        <div class="pt-top">
+          <div class="pt-av" style="background:${p.color}">${p.name[0]}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap">
+              <div class="pt-name">${p.name} 👤</div>
+              <div class="pt-money-inline">$${p.money}</div>
+            </div>
+            <div class="pt-sub">${cur?'你的回合':'等待中'}</div>
+          </div>
+        </div>
+        <div class="pt-arts">${artsRow||`<span style="font-size:.58rem;color:var(--ink3)">尚無收藏</span>`}</div>
+        ${collCards?`<div class="pt-collection">${collCards}</div>`:''}
+      </div>`;
+    }
+    return `<div class="p-tile${cur?' cur':''}" id="ptile-${pid}">
+      <div class="pt-top"><div class="pt-av" style="background:${p.color}">${p.name[0]}</div><div><div class="pt-name" style="color:${p.color}">${p.name}</div><div class="pt-sub">${diffName()} · 手牌${p.hand.length}張</div></div></div>
+      <div class="pt-arts">${artsRow||`<span style="font-size:.58rem;color:var(--ink3)">無</span>`}</div>
+      ${collCards?`<div class="pt-collection">${collCards}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function diffName(){return{easy:'新手',normal:'桌遊友善',hard:'桌遊高手',expert:'數學高手',genius:'數學天才'}[C.diff]||'數學高手';}
+
+function renderHand(){
+  const me=G.players[0];
+  document.getElementById('hand-cards').innerHTML=me.hand.map((c,i)=>{
+    const ev=evOn?calcCardEV(c):null;
+    return `<div class="hcard${selIdx===i?' sel':''}" style="background:${ACOL[c.ai]}" onclick="pickCard(${i})">
+      <div class="hc-n">${ASHORT[c.ai]}</div>
+      <div class="hc-t">${TL[c.type]}</div>
+      <div class="hc-ev">${ev?'$'+ev.lo+'–'+ev.hi:''}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('hcnt').textContent=`(${me.hand.length})`;
+  document.getElementById('play-btn').disabled=selIdx===null||phase!=='play'||G.turnIdx!==0;
+}
+
+// ══ EV (display functions — use artistEV engine) ═══════
+function calcCardEV(card){
+  const ev=artistEV(card.ai,0);
+  return{lo:Math.floor(ev.rawEV*.65),hi:Math.floor(ev.rawEV*1.08)};
+}
+function calcBuyEV(card){
+  const ev=artistEV(card.ai,1);
+  return{expected:ev.expected,prob:ev.prob,cv:ev.cv};
+}
+function updateAuctionEV(){
+  const el=document.getElementById('auction-ev');if(!el||!G.auction)return;
+  if(!evOn){el.innerHTML='';return;}
+  const card=G.auction.card,ev=calcBuyEV(card);
+  el.innerHTML=`<div class="ev-title">📊 期望值</div><div class="ev-rows">
+    <div class="ev-r"><span class="ev-l">累積市場值</span><span class="ev-v">${ev.cv>0?'$'+ev.cv:'未排名'}</span></div>
+    <div class="ev-r"><span class="ev-l">本輪已出</span><span class="ev-v">${G.rOut[card.ai]}/5</span></div>
+    <div class="ev-r"><span class="ev-l">入場機率</span><span class="ev-v">${ev.prob}%</span></div>
+    <div class="ev-r"><span class="ev-l">預期回收</span><span class="ev-v" style="color:var(--gold)">≈$${ev.expected}</span></div>
+  </div>`;
+}
+
+// ══ BID CONTROLS (right col, bottom-anchored) ══
+function showBidControls(minVal,maxVal,opts={}){
+  const el=document.getElementById('bid-controls');
+  el.style.display='';
+  if(window._bv===null||window._bv===undefined||window._bv<minVal)window._bv=minVal;
+  _renderBidCtl(minVal,maxVal,opts);
+  window.adjBid=function(d){
+    window._bv=Math.max(minVal,Math.min(maxVal,(window._bv||minVal)+d));
+    _renderBidCtl(minVal,maxVal,opts);
+  };
+}
+function _renderBidCtl(minVal,maxVal,opts){
+  const v=window._bv||minVal;
+  const show50=v>=30||maxVal>=50;
+  document.getElementById('bid-controls').innerHTML=`
+    <div class="bc-title">${opts.title||'出價'}</div>
+    <div class="bid-display">
+      <div class="bid-display-num">$${v}</div>
+      <div class="bid-display-sub">${opts.subText||''}</div>
+    </div>
+    <div class="step-grid">
+      ${show50?`<button class="sbtn neg" onclick="adjBid(-50)">−50</button><button class="sbtn" onclick="adjBid(50)">+50</button>`:`<div></div><div></div>`}
+      <button class="sbtn neg" onclick="adjBid(-10)">−10</button><button class="sbtn" onclick="adjBid(10)">+10</button>
+      <button class="sbtn neg" onclick="adjBid(-5)">−5</button><button class="sbtn" onclick="adjBid(5)">+5</button>
+      <button class="sbtn neg" onclick="adjBid(-1)">−1</button><button class="sbtn" onclick="adjBid(1)">+1</button>
+    </div>
+    ${opts.confirmHTML||''}
+    <div class="bid-note" id="bc-note">${opts.note||''}</div>`;
+}
+function hideBidControls(){document.getElementById('bid-controls').style.display='none';window._bv=null;}
+
+// ══ TURN FLOW ══════════════════════════════════
+function nextTurn(){
+  if(phase==='end')return;
+  phase='play';selIdx=null;clearAutoPass();hideBidControls();renderAll();
+  document.getElementById('ac-title').textContent='等待出牌…';
+  document.getElementById('ac-badge').style.display='none';
+
+  const p=G.players[G.turnIdx];
+
+  // Skip empty-hand players
+  if(!p.hand.length){
+    if(G.players.every(pl=>!pl.hand.length)){
+      addLog('所有玩家手牌用盡，遊戲提前結束',false,true);
+      phase='end';setTimeout(showResult,600);return;
+    }
+    addLog(`${ns(p)} 無手牌，跳過`);
+    advanceTurn();return;
+  }
+
+  if(G.turnIdx===0){
+    document.getElementById('ac-body').innerHTML=`<div class="wait-notice">你的回合 — 選一張手牌</div>`;
+    renderHand();
+  } else {
+    document.getElementById('ac-body').innerHTML=`<div class="wait-notice">${p.name} 思考中…</div>`;
+    // Item 11: variable AI delay 300-2300ms, show thinking bubble if >1s
+    const thinkMs=300+Math.random()*2000;
+    if(C.aiThink && thinkMs>1000){
+      setTimeout(()=>{if(G.turnIdx===G.players.indexOf(p))renderThinking(G.turnIdx);},900);
+    }
+    setTimeout(()=>aiPlayCard(G.turnIdx),thinkMs);
+  }
+}
+
+function renderThinking(pid){
+  const el=document.getElementById(`ptile-${pid}`);
+  if(!el)return;
+  const ex=el.querySelector('.pt-thinking');
+  if(!ex){
+    const d=document.createElement('div');d.className='pt-thinking';d.innerHTML='<span></span><span></span><span></span>';
+    el.appendChild(d);
+    setTimeout(()=>d.remove(),1800);
+  }
+}
+function pickCard(i){if(phase!=='play'||G.turnIdx!==0)return;selIdx=selIdx===i?null:i;renderHand();}
+function playSelected(){
+  if(selIdx===null||phase!=='play'||G.turnIdx!==0)return;
+  const me=G.players[0],card=me.hand[selIdx];
+  me.hand.splice(selIdx,1);selIdx=null;initiatePlay(card,0);
+}
+function initiatePlay(card,pid){
+  G.rOut[card.ai]++;G.aOut[card.ai]++;
+  addLog(`${ns(G.players[pid])} 出牌：${as(card.ai)}（${TL[card.type]}）`,pid===0);
+  // Bug fix: Double 牌出牌時市場板應顯示 N+2（第一張 + 即將補的第二張）
+  // 暫時 +1 讓 renderMarket 顯示正確，playSecondCard 真正 ++ 後自然正確
+  if(card.type==='double') G.rOut[card.ai]++;
+  renderMarket();
+  if(card.type==='double') G.rOut[card.ai]--; // 還原暫時計數
+  if(roundEndCheck(card))return;
+  phase='auction';
+  if(card.type==='double')doDoubleFlow(card,pid);
+  else launchAuction(card,pid,card.type,null);
+}
+
+// ══ DOUBLE FLOW ════════════════════════════════
+function doDoubleFlow(card,origPid){
+  _dc=card;
+  const op=G.players[origPid];
+  const cands=op.hand.filter(c=>c.ai===card.ai&&c.type!=='double');
+  if(origPid===0){
+    if(!cands.length)passDoubleAround(card,origPid,(origPid+1)%G.n);
+    else showDoubleUI(card,origPid,cands,false);
+  } else {
+    if(cands.length&&aiWillPlaySecond(op,card)){playSecondCard(op,cands[0],origPid);}
+    else passDoubleAround(card,origPid,(origPid+1)%G.n);
+  }
+}
+function playSecondCard(player,sc,newSeller){
+  const idx=player.hand.indexOf(sc);player.hand.splice(idx,1);
+  G.rOut[sc.ai]++;G.aOut[sc.ai]++;
+  addLog(`${ns(player)} 補牌成為新拍賣人（${as(sc.ai)} ${TL[sc.type]}）`,newSeller===0);
+  if(roundEndCheck(sc))return;
+  launchAuction(_dc,newSeller,sc.type,sc);
+}
+function passDoubleAround(card,origPid,startFrom,humanSkip=false){
+  _dc=card;let cur=startFrom,tries=0;
+  function nxt(){
+    if(cur===origPid||tries>=G.n){
+      addLog(`全員 Pass，${ns(G.players[origPid])} 免費取回`);
+      G.players[origPid].hand.push(card);G.rOut[card.ai]--;G.aOut[card.ai]--;
+      G.players[origPid].hand.sort((a,b)=>a.ai-b.ai);
+      afterAuction(origPid);return;
+    }
+    const p=G.players[cur];const cands=p.hand.filter(c=>c.ai===card.ai&&c.type!=='double');
+    if(cur===0&&!humanSkip){
+      if(!cands.length){addLog('你無牌可補');tries++;cur=(cur+1)%G.n;setTimeout(nxt,200);}
+      else showDoubleUI(card,origPid,cands,true);
+      return;
+    }
+    if(cands.length&&aiWillPlaySecond(p,card)){playSecondCard(p,cands[0],cur);}
+    else{if(cands.length)addLog(`${ns(p)} Pass`);tries++;cur=(cur+1)%G.n;setTimeout(nxt,350);}
+  }
+  setTimeout(nxt,300);
+}
+function showDoubleUI(card,origPid,cands,isLate){
+  const me=G.players[0];
+  // Show what card was played (item 10 fix)
+  const origPlayer=G.players[origPid];
+  const desc=isLate
+    ?`${origPlayer.name} 出了 ${ARTISTS[card.ai]}（雙重），正在找人補牌。你有同畫家的牌，補牌可成為新拍賣人並收全款。`
+    :`你出了 ${ARTISTS[card.ai]}（雙重）。補上同畫家的第二張牌，成為新拍賣人（收取全部款項）。`;
+  // Show the original double card visually
+  const origCardHTML=`<div style="display:flex;align-items:center;gap:.5rem;background:var(--cream2);border-radius:8px;padding:.45rem .6rem;margin-bottom:.5rem">
+    <div style="width:44px;height:62px;border-radius:6px;background:${ACOL[card.ai]};display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;font-size:.58rem;font-weight:700;flex-shrink:0">
+      <div style="font-family:'Playfair Display',serif;font-size:.6rem">${ARTISTS[card.ai]}</div>
+      <div style="font-size:.52rem;opacity:.8">${TL[card.type]}</div>
+    </div>
+    <div style="font-size:.78rem;color:var(--ink2)"><b>${origPlayer.name}</b> 的雙重牌</div>
+  </div>`;
+  const cardBtns=cands.map(c=>{
+    const i=me.hand.indexOf(c);
+    return `<button class="mbtn pri" style="display:flex;align-items:center;gap:.5rem;justify-content:center" onclick="humanSecondCard(${i},${origPid},${isLate})">
+      <div style="width:20px;height:28px;border-radius:3px;background:${ACOL[c.ai]};display:inline-block;flex-shrink:0"></div>
+      ${ARTISTS[c.ai]} — ${TL[c.type]}
+    </button>`;
+  }).join('');
+  document.getElementById('m-icon').textContent='🎨';
+  document.getElementById('m-title').textContent=isLate?'有機會補牌':'雙重拍賣';
+  document.getElementById('m-body').textContent=desc;
+  document.getElementById('m-extra').innerHTML=origCardHTML+`<div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:.5rem">${cardBtns}</div>`;
+  document.getElementById('m-btns').innerHTML=`<button class="mbtn sec" onclick="humanPassDouble(${origPid},${isLate})">不補牌</button>`;
+  document.getElementById('modal').classList.add('show');
+}
+window.humanSecondCard=function(idx,origPid,isLate){
+  closeModal();const me=G.players[0];const sc=me.hand[idx];
+  me.hand.splice(idx,1);G.rOut[sc.ai]++;G.aOut[sc.ai]++;
+  addLog(`你補牌成為新拍賣人`,true);
+  if(roundEndCheck(sc))return;
+  launchAuction(_dc,0,sc.type,sc);
+};
+window.humanPassDouble=function(origPid,isLate){
+  closeModal();addLog('你 Pass',true);
+  passDoubleAround(_dc,origPid,(isLate?1:(origPid+1))%G.n,true);
+};
+function aiWillPlaySecond(player,card){
+  const b=player.bought.filter(c=>c.ai===card.ai).length;
+  if(C.diff==='easy')return b>=1||Math.random()<.42;
+  if(C.diff==='normal')return b>=1||G.rOut[card.ai]>=2||Math.random()<.55;
+  return Math.random()<.88; // hard/expert almost always want to be auctioneer
+}
+
+// ══ AUCTION ENGINE ═════════════════════════════
+function launchAuction(card,sellerPid,atype,card2){
+  G.auction={card,card2,sellerPid,atype};
+  const cards=card2?[card,card2]:[card];
+  const badge=document.getElementById('ac-badge');
+  badge.style.display='';badge.style.background=TC[atype]+'22';badge.style.color=TC[atype];
+  badge.textContent=TL[atype]+'拍賣';
+  document.getElementById('ac-title').textContent=`${ARTISTS[card.ai]}${card2?' ×2':''}`;
+  addLog(`開始 ${TL[atype]}拍賣：${as(card.ai)}`,false,true);
+  if(atype==='open')aOpen(cards,sellerPid);
+  else if(atype==='sealed')aSealed(cards,sellerPid);
+  else if(atype==='once')aOnce(cards,sellerPid);
+  else if(atype==='fixed')aFixed(cards,sellerPid);
+}
+function cardsHTML(cards){
+  return`<div class="pcards-row">${cards.map(c=>{
+    const ev=evOn&&G.auction?calcBuyEV(c):null;
+    return`<div class="pcard" style="background:${ACOL[c.ai]}"><div class="pc-a">${ARTISTS[c.ai]}</div><div class="pc-t">${TL[c.type]}</div><div class="pc-ev" style="display:${evOn?'':'none'}">${ev?'≈$'+ev.expected:''}</div></div>`;
+  }).join('')}</div>`;
+}
+function evPanelHTML(){return`<div class="ev-panel" id="auction-ev" style="display:${evOn?'':'none'}"></div>`;}
+function lbb(hi,winner){
+  const isMe=winner===0;
+  return`<div class="live-bid-banner"><div class="lbb-left"><div class="lbb-label">目前最高</div><div class="lbb-amount">$${hi||'—'}</div></div>${
+    isMe?`<div class="lbb-leading-you">🏆 你領先</div>`
+    :`<div class="lbb-leader">${winner>=0?G.players[winner].name:'尚無出價'}</div>`
+  }</div>`;
+}
+
+// Item 10: proper card-fly animation to winner's player tile
+function flyCards(cards,winnerPid,cb){
+  const cardEls=document.querySelectorAll('.pcard');
+  if(!cardEls.length||winnerPid<0){setTimeout(cb,400);return;}
+
+  // Get target tile position
+  const targetId=`ptile-${winnerPid}`;
+  const target=document.getElementById(targetId);
+  if(!target){setTimeout(cb,400);return;}
+
+  const targetRect=target.getBoundingClientRect();
+  const targetCx=targetRect.left+targetRect.width/2;
+  const targetCy=targetRect.top+targetRect.height/2;
+
+  cardEls.forEach(cardEl=>{
+    const cr=cardEl.getBoundingClientRect();
+    const cardCx=cr.left+cr.width/2;
+    const cardCy=cr.top+cr.height/2;
+    const dx=targetCx-cardCx;
+    const dy=targetCy-cardCy;
+
+    // Animate with keyframes via JS
+    cardEl.animate([
+      {transform:'scale(1)',opacity:1,offset:0},
+      {transform:`scale(1.15) translate(${dx*0.3}px,${dy*0.3}px)`,opacity:1,offset:0.25},
+      {transform:`scale(0.6) translate(${dx}px,${dy}px)`,opacity:0,offset:1}
+    ],{duration:1200,easing:'ease-in',fill:'forwards'});
+  });
+
+  // Flash the target tile
+  if(target){
+    target.style.transition='box-shadow .2s';
+    target.style.boxShadow='0 0 0 3px var(--gold2)';
+    setTimeout(()=>{target.style.boxShadow='';},800);
+  }
+  setTimeout(cb,1400);
+}
+
+// ─── OPEN ───────────────────────────────────────
+function aOpen(cards,sellerPid){
+  let hi=0,winner=-1,hist=[];
+  let apQueued=false;
+  function initAI(){
+    for(let i=1;i<G.n;i++){
+      if(i===sellerPid)continue; // seller never bids in their own open auction
+      const p=G.players[i];const mx=aiMax(p,cards[0],false);
+      if(Math.random()>aiPassRate()){
+        const b=Math.max(1,Math.floor(mx*(.28+Math.random()*.35)));
+        if(b>hi&&b<=p.money){hi=b;winner=i;hist.push({pid:i,amt:b});}
+      }
+    }
+    renderOA();
+  }
+  function renderOA(){
+    const isMe=winner===0;
+    document.getElementById('ac-body').innerHTML=`
+      ${cardsHTML(cards)}${evPanelHTML()}${lbb(hi,winner)}
+      <div class="bid-hist">${hist.slice(-4).map(h=>`<div class="bh-row"><span style="font-weight:600;color:${G.players[h.pid].color}">${G.players[h.pid].name}</span><span class="bh-amt"> $${h.amt}</span></div>`).join('')||`<div style="font-size:.68rem;color:var(--ink3)">尚無出價</div>`}</div>`;
+    updateAuctionEV();
+    const mn=hi+1,mx=G.players[0].money;
+    if(isMe){
+      hideBidControls();
+      showBidControls(mn,mx,{title:'繼續加碼',subText:'你目前最高',confirmHTML:`<button class="confirm-btn" onclick="doOA()">加碼確認</button><button class="pass-btn" onclick="passOA()">立即落槌</button>`});
+      apQueued=true;clearAutoPass();
+      autoPassTimer=setTimeout(()=>{if(apQueued){apQueued=false;finalizeOA();}},1500);
+    } else {
+      showBidControls(mn,mx,{title:'公開競標',subText:`需高於 $${hi}`,confirmHTML:`<button class="confirm-btn" onclick="doOA()">確認出價</button><button class="pass-btn" onclick="passOA()">Pass</button>`});
+    }
+  }
+  window.doOA=function(){
+    clearAutoPass();apQueued=false;
+    const me=G.players[0],v=window._bv||0;
+    if(v<=hi||v>me.money){const n=document.getElementById('bc-note');if(n)n.textContent='出價需高於 $'+hi;return;}
+    hi=v;winner=0;hist.push({pid:0,amt:v});
+    addLog(`你出價 $${v}`,true);hideBidControls();
+    let i=1;
+    function cyc(){
+      if(i>=G.n){renderOA();return;}
+      const p=G.players[i];
+      if(i!==sellerPid){ // seller never counter-bids own auction
+        const mx=aiMax(p,cards[0],false);
+        while(hi<mx&&Math.random()>aiPassRate()){
+          const nb=hi+1+Math.floor(Math.random()*4);
+          if(nb<=p.money&&nb<=mx){hi=nb;winner=i;hist.push({pid:i,amt:nb});addLog(`${ns(p)} $${nb}`);break;}else break;
+        }
+      }
+      i++;setTimeout(cyc,280);
+    }
+    setTimeout(cyc,350);
+  };
+  window.passOA=function(){clearAutoPass();apQueued=false;finalizeOA();};
+  function finalizeOA(){
+    hideBidControls();
+    if(winner<0){G.players[sellerPid].bought.push(...cards);addLog(`無人出價，${ns(G.players[sellerPid])} 免費得標`);}
+    else{
+      const buyer=G.players[winner];const isMine=winner===0;const isMyCard=sellerPid===0;
+      if(winner===sellerPid){buyer.money-=hi;buyer.bought.push(...cards);recordEarning(sellerPid,winner,hi);addLog(`${ns(buyer)} 自己得標 $${hi}（付銀行）`,isMine,false,isMine);}
+      else{buyer.money-=hi;G.players[sellerPid].money+=hi;buyer.bought.push(...cards);recordEarning(sellerPid,winner,hi);addLog(`🔨 ${ns(buyer)} 得標 $${hi}${isMyCard?` → 你收 $${hi}`:''}`,false,false,isMine,isMyCard);}
+    }
+    flyCards(cards,winner,()=>afterAuction(sellerPid));
+  }
+  setTimeout(initAI,300);
+}
+
+// ─── SEALED ─────────────────────────────────────
+function aSealed(cards,sellerPid){
+  document.getElementById('ac-body').innerHTML=`${cardsHTML(cards)}${evPanelHTML()}<div style="font-size:.75rem;color:var(--ink2)">暗標：全員同時揭示，最高者得標</div>`;
+  updateAuctionEV();
+  showBidControls(0,G.players[0].money,{title:'暗標出價',subText:'0 = 不出價',confirmHTML:`<button class="confirm-btn" onclick="doSealed()">確認暗標</button>`});
+  window.doSealed=function(){
+    const myBid=window._bv||0;
+    const bids=[{pid:0,bid:myBid}];
+    for(let i=1;i<G.n;i++){
+      const p=G.players[i];
+      const ownCard=(i===sellerPid);
+      const mx=aiMax(p,cards[0],ownCard);
+      // Seller gets 0 max bid → bids 0 (pays bank if wins, but won't win unless all others bid 0)
+      bids.push({pid:i,bid:Math.min(Math.max(0,Math.floor(mx*(.45+Math.random()*.45))),p.money)});
+    }
+    addLog('暗標揭示：'+bids.map(b=>`${ns(G.players[b.pid])}=$${b.bid}`).join(' '),false,true);
+    let best=bids.reduce((a,b)=>{if(b.bid>a.bid)return b;if(b.bid===a.bid&&b.pid===sellerPid)return b;return a;});
+    hideBidControls();
+    if(best.bid===0){G.players[sellerPid].bought.push(...cards);addLog(`無人出價免費得標`);}
+    else{
+      const buyer=G.players[best.pid];const isMine=best.pid===0;const isMyCard=sellerPid===0;
+      if(best.pid===sellerPid){buyer.money-=best.bid;buyer.bought.push(...cards);recordEarning(sellerPid,best.pid,best.bid);addLog(`${ns(buyer)} 暗標得標 $${best.bid}（付銀行）`,isMine,false,isMine);}
+      else{buyer.money-=best.bid;G.players[sellerPid].money+=best.bid;buyer.bought.push(...cards);recordEarning(sellerPid,best.pid,best.bid);addLog(`🔨 ${ns(buyer)} 暗標得標 $${best.bid}${isMyCard?` → 你收 $${best.bid}`:''}`,false,false,isMine,isMyCard);}
+    }
+    flyCards(cards,best.pid,()=>afterAuction(sellerPid));
+  };
+}
+
+// ─── ONCE AROUND ────────────────────────────────
+function aOnce(cards,sellerPid){
+  let hi=0,winner=-1;
+  const order=[];for(let i=(sellerPid+1)%G.n;i!==sellerPid;i=(i+1)%G.n)order.push(i);order.push(sellerPid);
+  let oi=0;
+  function nxt(){
+    if(oi>=order.length){finalizeOnce();return;}
+    const pid=order[oi++];const p=G.players[pid];
+    if(pid===0){
+      document.getElementById('ac-body').innerHTML=`${cardsHTML(cards)}${evPanelHTML()}${lbb(hi,winner)}<div style="font-size:.72rem;color:var(--ink2)">依序各出價一次，拍賣人最後</div>`;
+      updateAuctionEV();
+      showBidControls(hi+1,p.money,{title:'依序競標',subText:`需高於 $${hi}`,confirmHTML:`<button class="confirm-btn" onclick="doOnce()">出價</button><button class="pass-btn" onclick="passOnce()">Pass</button>`});
+      window.doOnce=function(){const v=window._bv||0;if(v>hi&&v<=p.money){hi=v;winner=0;addLog(`你出價 $${v}`,true);}else addLog('你 Pass',true);hideBidControls();nxt();};
+      window.passOnce=function(){addLog('你 Pass',true);hideBidControls();nxt();};
+    } else {
+      const ownCard=(pid===sellerPid);
+      const mx=aiMax(p,cards[0],ownCard);
+      if(!ownCard&&hi<mx&&Math.random()>aiPassRate()){const b=hi+1+Math.floor(Math.random()*5);if(b<=p.money&&b<=mx){hi=b;winner=pid;addLog(`${ns(p)} $${b}`);}else addLog(`${ns(p)} Pass`);}
+      else addLog(`${ns(p)} Pass`);
+      setTimeout(nxt,320);
+    }
+  }
+  function finalizeOnce(){
+    hideBidControls();
+    if(winner<0){G.players[sellerPid].bought.push(...cards);addLog(`無人出價免費得標`);}
+    else{
+      const b=G.players[winner];const isMine=winner===0;const isMyCard=sellerPid===0;
+      if(winner===sellerPid){b.money-=hi;b.bought.push(...cards);recordEarning(sellerPid,winner,hi);addLog(`${ns(b)} 自己得標 $${hi}（付銀行）`,isMine,false,isMine);}
+      else{b.money-=hi;G.players[sellerPid].money+=hi;b.bought.push(...cards);recordEarning(sellerPid,winner,hi);addLog(`🔨 ${ns(b)} 以 $${hi} 得標${isMyCard?` → 你收 $${hi}`:''}`,false,false,isMine,isMyCard);}
+    }
+    flyCards(cards,winner,()=>afterAuction(sellerPid));
+  }
+  document.getElementById('ac-body').innerHTML=`${cardsHTML(cards)}${evPanelHTML()}<div class="wait-notice">依序出價中…</div>`;
+  updateAuctionEV();setTimeout(nxt,300);
+}
+
+// ─── FIXED ──────────────────────────────────────
+function aFixed(cards,sellerPid){
+  const seller=G.players[sellerPid];
+  if(sellerPid===0){
+    document.getElementById('ac-body').innerHTML=`${cardsHTML(cards)}${evPanelHTML()}<div style="font-size:.72rem;color:var(--ink2)">定價拍賣：設定買斷價，無人買時你必須自購。</div>`;
+    updateAuctionEV();
+    showBidControls(1,seller.money,{title:'設定定價',subText:'無人買→你必須自購',confirmHTML:`<button class="confirm-btn" onclick="setFP()">設定定價</button>`});
+    window.setFP=function(){const pr=Math.max(1,window._bv||1);addLog(`你定價 $${pr}`,true);hideBidControls();runFixed(cards,sellerPid,pr);};
+  } else {
+    const price = aiFixedPrice(cards, sellerPid);
+    document.getElementById('ac-body').innerHTML=`${cardsHTML(cards)}${evPanelHTML()}<div style="font-size:.75rem;color:var(--ink2);text-align:center">${ns(seller)} 定價 <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--gold)">$${price}</span></div>`;
+    updateAuctionEV();
+    addLog(`${ns(seller)} 定價 $${price}`);
+    setTimeout(()=>runFixed(cards,sellerPid,price),900);
+  }
+}
+function runFixed(cards,sellerPid,price){
+  // FIX: ensure price is a valid number
+  const safePrice=parseInt(price)||1;
+  const order=[];for(let i=(sellerPid+1)%G.n;i!==sellerPid;i=(i+1)%G.n)order.push(i);order.push(sellerPid);
+  let oi=0;
+  function nxt(){
+    if(oi>=order.length){afterAuction(sellerPid);return;}
+    const pid=order[oi++];const p=G.players[pid];const last=pid===sellerPid;
+    if(pid===0){
+      document.getElementById('ac-body').innerHTML=`${cardsHTML(cards)}<div style="font-size:.95rem;font-weight:600;text-align:center;margin:.4rem 0">定價：<span style="color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1.5rem">$${safePrice}</span></div>`;
+      document.getElementById('bid-controls').style.display='';
+      document.getElementById('bid-controls').innerHTML=`
+        <div class="bc-title">定價 $${safePrice}</div>
+        <button class="buy-btn" onclick="doBuyFixed(${safePrice},${sellerPid})">買！$${safePrice}</button>
+        <button class="pass-btn" style="margin-top:.3rem" onclick="doPassFixed()">Pass</button>`;
+      window.doBuyFixed=function(pr,sid){
+        const me=G.players[0];if(me.money<pr){addLog('資金不足');doPassFixed();return;}
+        me.money-=pr;G.players[sid].money+=pr;me.bought.push(...cards);
+        recordEarning(sid,0,pr);
+        hideBidControls();addLog(`🔨 你以 $${pr} 購入`,true,false,true);
+        flyCards(cards,0,()=>afterAuction(sid));
+      };
+      window.doPassFixed=function(){addLog('你 Pass',true);hideBidControls();nxt();};
+    } else {
+      const isSeller=pid===sellerPid;
+      const mx=aiMax(p,cards[0],isSeller);
+      const will=!isSeller&&p.money>=safePrice&&mx>=safePrice&&Math.random()>aiPassRate();
+      if(will||last){
+        p.money-=safePrice;
+        if(!last)G.players[sellerPid].money+=safePrice;
+        p.bought.push(...cards);
+        recordEarning(sellerPid,pid,safePrice);
+        const isMyCard=sellerPid===0;
+        addLog(last?`${ns(p)} 強制自購 $${safePrice}（付銀行）`:`🔨 ${ns(p)} 以 $${safePrice} 購入${isMyCard?` → 你收 $${safePrice}`:''}`,false,false,false,isMyCard&&!last);
+        flyCards(cards,pid,()=>afterAuction(sellerPid));
+      } else {addLog(`${ns(p)} Pass`);setTimeout(nxt,500);}
+    }
+  }
+  setTimeout(nxt,300);
+}
+
+// ══ AI LOGIC v3 — FULL REWRITE ═══════════════════
+
+// ── UNIFIED ARTIST EV ENGINE ─────────────────────
+// The single source of truth for how valuable a card is.
+// Considers: cumulative value, current round count, competition from other artists,
+// artist scarcity (rare artists are harder to topple), and remaining rounds.
+function artistEV(ai, hypExtraCards=0){
+  const cv    = G.mvals[ai].reduce((a,b)=>a+b, 0);
+  const out   = G.rOut[ai] + hypExtraCards;
+  const rnd   = G.round;
+  const total = ATOTAL[ai]; // 12-16
+
+  // ── Base placement probabilities (by cards-out count) ──
+  // These are probability of finishing 1st / 2nd / 3rd this round
+  const base = [
+    [0,    0,    0   ],  // 0 cards: essentially 0
+    [0.04, 0.07, 0.12],  // 1 card
+    [0.10, 0.18, 0.28],  // 2 cards
+    [0.28, 0.35, 0.22],  // 3 cards (sum ~0.85 for top3)
+    [0.55, 0.25, 0.12],  // 4 cards
+    [0.70, 0.18, 0.08],  // 5 cards (called round, winner likely)
+  ];
+  const [p1b, p2b, p3b] = base[Math.min(out, 5)];
+
+  // ── Competition adjustment (tie-breaker aware) ──
+  // An artist with the same count but higher aOut loses the tie → ranks lower
+  // Count how many artists are AHEAD of us (higher count, or same count but lower aOut)
+  let competitorCount = 0;
+  ARTISTS.forEach((_,i) => {
+    if(i===ai) return;
+    const theirOut = G.rOut[i];
+    if(theirOut > out) competitorCount++;
+    else if(theirOut === out && out > 0 && G.aOut[i] < G.aOut[ai]) competitorCount++;
+    // same count but they appeared earlier → they rank ahead of us
+  });
+  const compPenalty = competitorCount * 0.07;
+  const p1 = Math.max(0.01, p1b - compPenalty*1.2);
+  const p2 = Math.max(0.01, p2b - compPenalty*0.8);
+  const p3 = Math.max(0.01, p3b - compPenalty*0.5);
+  const pPlace = p1+p2+p3; // total probability of placing top3
+
+  // ── Scarcity adjustment (Q1: rare artists harder to topple) ──
+  // BUT also harder to accumulate to high count in first place
+  // Key insight: in late rounds, an artist with fewer total cards has FEWER
+  // cards remaining in circulation, making it HARDER to push to 1st/2nd,
+  // not easier. The scarcity helps early (hard to catch up) but hurts late
+  // (less fuel to drive).
+  // Scarcity boost: applies when out is ALREADY high (hard to add more cards)
+  // Scarcity penalty: applies when out is LOW in late rounds (hard to build)
+  const scarcity = (16 - total) / 16; // LM=0.25, YK~0.19, CP~0.125, KG~0.06, KP=0
+  let scarcityFactor = 1.0;
+  if(out >= 2){
+    // Already has cards → rare artist hard to catch → slight boost
+    scarcityFactor = 1 + scarcity * 0.15;
+  }
+  if(rnd >= 3 && out <= 1){
+    // Late round, cold start, rare artist means even fewer cards to emerge
+    scarcityFactor = 1 - scarcity * 0.2;
+  }
+
+  // ── This-round value if placed ──
+  // This is what you actually GET when the round ends and cards are cleared.
+  const thisRoundGain = (cv+30)*p1 + (cv+20)*p2 + (cv+10)*p3;
+
+  // ── Future rounds potential ──
+  // Cards are CLEARED each round — a buyer gets one settlement, not future ones.
+  // Future value is relevant for CARD PLAY decisions (aiPlayCard) but NOT for
+  // bidding (aiMax), where you only recoup the current round's payout.
+  // We keep it in rawEV for card-play scoring, but aiMax uses thisRoundGain directly.
+  const futureRounds = Math.max(0, 4 - rnd);
+  const futurePotential = futureRounds * pPlace * 0.3 * 20;
+
+  // rawEV = full expected value (used for card-play scoring)
+  const rawEV = (thisRoundGain + futurePotential) * scarcityFactor;
+  // bidEV = what a BUYER can actually recoup at settlement (no future rounds)
+  const bidEV = thisRoundGain * scarcityFactor;
+
+  return {
+    p1, p2, p3, pPlace,
+    cv, thisRoundGain,
+    rawEV,   // for card-play scoring (includes future rounds)
+    bidEV,   // for bidding only (current round settlement only)
+    scarcityFactor,
+    expected: Math.floor(rawEV),
+    prob: Math.round(pPlace*100),
+  };
+}
+
+// ── MAX BID CALCULATOR ───────────────────────────
+// v10 改進：
+//   LV1    : 友善出價（略低於平手點），讓初學者容易買到牌，體驗更好
+//   LV2    : 樂觀偏差，bidEV × 0.60，偶爾超標（情緒化）
+//   LV3    : 損失感知理性公式，接近 halfValue + 固定溢價
+//   LV4    : halfValue + 動態溢價（synergy/位置/盈虧感知）
+//   LV5    : halfValue + 資金感知 + 反制溢價
+//   Ceiling: cv+30 是任何情況下的硬上限（已修正避免出超過最大回收值）
+function cardMaxValue(ai){
+  const cv = G.mvals[ai].reduce((a,b)=>a+b, 0);
+  return cv + 30; // buyer can never recoup more than this in one settlement
+}
+
+// ── buyer threat score ─────────────────────────────
+// LV4+ 出價時感知：這個畫家對哪些對手已有協同效益
+// 若對手持有同畫家 2+ 張，買了之後對手更容易確保入圍，這是一個「威脅放大」
+// 因此買家出價上限應略為保守（風險分散到對手也有牌的情境）
+// weight 設計偏低（0.06），不讓這個因素主導決策，僅作微調
+function buyerThreatAdjust(card, buyerPid){
+  if(C.diff!=='expert' && C.diff!=='genius') return 1.0;
+  const ai = card.ai;
+  // Count how many OTHER players already have 2+ cards of this artist
+  const threatPlayers = G.players.filter((p,i)=>{
+    if(i===buyerPid) return false;
+    return p.bought.filter(c=>c.ai===ai).length >= 2;
+  }).length;
+  // Each threatening opponent reduces buyer's willingness slightly
+  // Risk: buying this card also helps them confirm placement
+  // Cap reduction at 12% total (low weight as per design note 1.2A)
+  return Math.max(0.88, 1 - threatPlayers * 0.06);
+}
+
+function aiMax(player, card, isOwnCard=false){
+  const ai      = card.ai;
+  const ev      = artistEV(ai, 1); // +1 = assuming we buy this card
+  const ceiling = cardMaxValue(ai);
+  const pid     = G.players.indexOf(player);
+
+  // ── Seller buyback logic ──
+  if(isOwnCard){
+    return Math.floor(Math.min(ev.rawEV * 0.45, player.money));
+  }
+
+  // ── Synergy: already own same artist ──
+  const sameOwned = player.bought.filter(c=>c.ai===ai).length;
+  // LV1-2: smaller synergy感知; LV3+: standard synergy
+  const synergyMult = (C.diff==='easy'||C.diff==='normal')
+    ? 1 + Math.min(0.10, sameOwned * 0.04)
+    : 1 + Math.min(0.25, sameOwned * 0.10);
+
+  // ── Core bid computation by difficulty ──────────────
+  let adjustedEV;
+
+  if(C.diff==='easy'){
+    // ── LV1 友善出價：略低於理論平手點，讓玩家容易買到牌
+    // halfValue = bidEV × 0.5 是雙方平手點；easy 出到 ~0.45 讓玩家略佔優
+    // 帶隨機波動讓行為自然（有時候出到 0.5 以上，有時候更低）
+    adjustedEV = ev.bidEV * (0.38 + Math.random() * 0.14); // ≈ 0.38–0.52 × bidEV
+  } else if(C.diff==='normal'){
+    // ── LV2 樂觀偏差：不知道平手點，追 bidEV 的 55-70%，偶爾情緒化超標
+    const emotionBoost = Math.random() < 0.18 ? 1.25 : 1.0; // 18% 情緒化
+    adjustedEV = ev.bidEV * (0.55 + Math.random() * 0.15) * emotionBoost * synergyMult;
+  } else {
+    // ── LV3-5 損失感知公式：p×gain/(1-p)，接近 halfValue + 溢價
+    const p    = Math.max(0.05, Math.min(0.80, ev.pPlace));
+    const gain = ev.bidEV * synergyMult;
+    adjustedEV = Math.min(gain, (p * gain) / Math.max(0.20, 1-p));
+  }
+
+  // ── Earnings-awareness (LV3+) ──
+  let earningsFactor = 1.0;
+  if((C.diff==='hard'||C.diff==='expert'||C.diff==='genius') && G.roundEarnings){
+    const myE    = G.roundEarnings[pid]||0;
+    const maxOppE = Math.max(0, ...G.roundEarnings.filter((_,i)=>i!==pid));
+    if(myE > 25)              earningsFactor = 0.88;
+    else if(maxOppE-myE > 35) earningsFactor = 1.10;
+  }
+
+  // ── Buyer threat adjustment (LV4+, low weight ≤12%) ──
+  const threatFactor = buyerThreatAdjust(card, pid);
+
+  // ── Wealth factor (LV5 genius only) ──
+  let wealthFactor = 1.0;
+  if(C.diff==='genius'){
+    const avgOpp = G.players.filter(p=>p!==player).reduce((s,p)=>s+p.money,0)/(G.n-1);
+    wealthFactor = avgOpp < 40 ? 1.15 : avgOpp > 85 ? 0.93 : 1.0;
+  }
+
+  // ── Position factor ──
+  let posFactor = 1.0;
+  if(C.diff!=='easy'){
+    if(pid>=3)       posFactor = 0.94;
+    else if(pid===2) posFactor = 0.97;
+    else if(pid===1) posFactor = 1.03;
+  }
+
+  // ── Difficulty scaling ──
+  const diffMult = {easy:.40, normal:.60, hard:.80, expert:.95, genius:1.0}[C.diff]||.95;
+  const variance = {easy:.28, normal:.20, hard:.12, expert:.08, genius:.05}[C.diff]||.08;
+
+  let base = adjustedEV * diffMult * earningsFactor * threatFactor * wealthFactor * posFactor;
+  base *= 1 + (Math.random()-.5)*variance;
+
+  return Math.max(1, Math.floor(Math.min(base, ceiling*0.90, player.money)));
+}
+
+function aiPassRate(){ return {easy:.60,normal:.42,hard:.25,expert:.13,genius:.08}[C.diff]||.13; }
+function isCurrentSeller(pid){ return G.auction&&G.auction.sellerPid===pid; }
+
+// ── CALL ROUND EVALUATOR ─────────────────────────
+// v10 改進：
+//   1. oppGain 動態加權（對手持有確定性高才算真正威脅）
+//   2. wastedTurnCost 動態化（依手牌剩餘價值，而非固定值）
+//   3. isLeadAtRisk 時機鎖定：領先不穩固時積極 call
+//   4. 每回合 call round 的獲益和代價都納入計算
+// 返回正值 = 應 call round，負值 = 不應 call
+function aiCallRoundValue(player, card){
+  const ai  = card.ai;
+  if(G.rOut[ai]!==4) return 0;
+
+  const pid = G.players.indexOf(player);
+  const cv  = G.mvals[ai].reduce((a,b)=>a+b,0);
+  const rnd = G.round;
+
+  // ── 當前排名快照 ──
+  const snapshot = ARTISTS.map((_,oai)=>({oai, cnt:G.rOut[oai], aOut:G.aOut[oai]}))
+    .filter(x=>x.cnt>0)
+    .sort((a,b)=>b.cnt-a.cnt || a.aOut-b.aOut);
+  const myArtistRank = snapshot.findIndex(x=>x.oai===ai);
+  const myRankVal    = myArtistRank>=0 && myArtistRank<=2 ? RVAL[myArtistRank] : 0;
+
+  // ── 我的總收益（trigger 畫家 + 第 2/3 名的我的持有）──
+  const myBought      = player.bought.filter(c=>c.ai===ai).length;
+  const myTriggerGain = myBought * (cv + myRankVal);
+
+  let my2ndGain = 0, my3rdGain = 0;
+  if(snapshot.length>=2){
+    const second = snapshot[1];
+    if(second.oai !== ai){
+      const my2nd = player.bought.filter(c=>c.ai===second.oai).length;
+      const cv2   = G.mvals[second.oai].reduce((a,b)=>a+b,0);
+      my2ndGain   = my2nd * (cv2 + RVAL[1]);
+    }
+  }
+  if(snapshot.length>=3){
+    const third = snapshot[2];
+    if(third.oai !== ai){
+      const my3rd = player.bought.filter(c=>c.ai===third.oai).length;
+      const cv3   = G.mvals[third.oai].reduce((a,b)=>a+b,0);
+      my3rdGain   = my3rd * (cv3 + RVAL[2]);
+    }
+  }
+  const myTotalGain = myTriggerGain + my2ndGain + my3rdGain;
+
+  // ── 手牌損失 ──
+  const myHandSame = player.hand.filter(c=>c.ai===ai).length;
+  const carryValue = cv * 0.25;
+  const handLoss   = Math.max(0, myHandSame * (11 - carryValue));
+
+  // ── oppGain 動態加權（v10 新增）──
+  // 入圍「確定性」高的對手持有才算真正威脅（較高係數）
+  // 分散持有、未必入圍的算低威脅（較低係數）
+  // LV1-2 維持固定 0.30 係數（計算能力有限）
+  let oppGain = 0;
+  G.players.forEach((opp,i)=>{
+    if(i===pid) return;
+    snapshot.forEach((entry,rank)=>{
+      if(rank>=3) return;
+      const cnt = opp.bought.filter(c=>c.ai===entry.oai).length;
+      if(!cnt) return;
+      const entryCV = G.mvals[entry.oai].reduce((a,b)=>a+b,0);
+      const gain    = cnt * (entryCV + (RVAL[rank]||0));
+      let weight;
+      if(C.diff==='easy'||C.diff==='normal'){
+        weight = 0.30; // 固定係數
+      } else {
+        // 動態：持有 3+ 張 or 已達 4 張出牌 → 高確定性威脅
+        const ownedCnt = opp.bought.filter(c=>c.ai===entry.oai).length;
+        const isHighCertainty = ownedCnt >= 3 || G.rOut[entry.oai] >= 4;
+        weight = isHighCertainty ? 0.45 : 0.18;
+      }
+      oppGain += gain * weight;
+    });
+  });
+
+  // ── LV4/5: futureThreat ──
+  let futureThreat = 0;
+  if(C.diff==='expert'||C.diff==='genius'){
+    ARTISTS.forEach((_,oai)=>{
+      if(oai===ai) return;
+      const oOut = G.rOut[oai];
+      if(oOut<2) return;
+      const oppBoughtOai = G.players.filter((_,i)=>i!==pid)
+        .reduce((s,p)=>s+p.bought.filter(c=>c.ai===oai).length,0);
+      if(oppBoughtOai>0 && Math.abs(oOut-G.rOut[ai])<=1){
+        futureThreat -= 7;
+      }
+    });
+    if(C.diff==='genius'){
+      const bigHandOpp = G.players.filter((_,i)=>i!==pid&&G.players[i].hand.length>=3).length;
+      if(bigHandOpp>=2) futureThreat -= 6;
+    }
+  }
+
+  // ── wastedTurnCost 動態化（v10 新增）──
+  // LV1-2 固定值；LV3-5 依手牌剩餘 rawEV 動態計算
+  // 代價 = 損失幾次出牌機會的預期收益（手牌好代價高，手牌爛代價低）
+  let wastedTurnCost;
+  if(C.diff==='easy'||C.diff==='normal'){
+    wastedTurnCost = rnd===4 ? 6 : rnd===3 ? 11 : 14;
+  } else {
+    const handValue = player.hand
+      .filter(c=>c.ai!==ai)
+      .reduce((sum,c)=>sum + artistEV(c.ai,1).rawEV, 0);
+    const avgHandVal = player.hand.length > 1
+      ? handValue / Math.max(1, player.hand.length - 1)
+      : 8;
+    const turnsLeftEst = Math.max(1, player.hand.length - 1);
+    wastedTurnCost = Math.min(20, Math.max(4, avgHandVal * 0.35 * Math.min(turnsLeftEst, 3)));
+    if(rnd===4) wastedTurnCost = Math.min(wastedTurnCost, 7);
+  }
+
+  // ── isLeadAtRisk 時機鎖定（v10 新增，LV4+）──
+  // 若我在此畫家的領先不穩固（比第二名只多1張，且對手手上還有牌），積極 call
+  // 但同時 call round 對手也會結算，玩家需承擔 oppGain 已在公式中扣除的代價
+  let leadRiskBonus = 0;
+  if(C.diff==='expert'||C.diff==='genius'){
+    const myBoughtAi     = player.bought.filter(c=>c.ai===ai).length;
+    const maxOppBoughtAi = Math.max(0, ...G.players
+      .filter((_,i)=>i!==pid)
+      .map(p=>p.bought.filter(c=>c.ai===ai).length));
+    const oppHandHasSame = G.players
+      .filter((_,i)=>i!==pid)
+      .some(p=>p.hand.filter(c=>c.ai===ai).length > 0);
+    // 領先不穩固：我持有 ≥ 2 且領先差距 ≤ 1 且對手手上還有同畫家牌
+    const leadIsShaky = myBoughtAi >= 2 && (myBoughtAi - maxOppBoughtAi) <= 1 && oppHandHasSame;
+    if(leadIsShaky) leadRiskBonus = 10;
+  }
+
+  const net = myTotalGain - handLoss - oppGain + futureThreat - wastedTurnCost + leadRiskBonus;
+  return net;
+}
+
+// ── FIXED PRICE CALCULATOR ───────────────────────
+// v10 改進（LV4+）：估算各對手的 aiMax，找出「至少讓 1 人買，同時最大化利潤」的甜蜜點
+// LV1-3 維持原有 buyerMax 公式
+// 也考慮「風險分散」：若此畫家對多個對手都有威脅（他們持有量高），
+// 賣家定價太貴可能讓威脅性對手輕易買走，應略微保守
+function aiFixedPrice(cards, sellerPid){
+  const card   = cards[0];
+  const ev     = artistEV(card.ai, 1);
+  const n      = G.n;
+  const seller = G.players[sellerPid];
+
+  // LV1-3: 原有公式（buyerMax × targetMargin）
+  if(C.diff==='easy'||C.diff==='normal'||C.diff==='hard'){
+    const buyerMax     = (ev.pPlace * (ev.cv + 25)) / Math.max(0.1, 1+ev.pPlace) * 1.3;
+    const targetMargin = 0.75 + (n-3)*0.05;
+    let price          = Math.floor(buyerMax * targetMargin);
+    const selfBreakEven= Math.floor(ev.pPlace * (ev.cv + 25));
+    price = Math.max(price, Math.floor(selfBreakEven * 0.65));
+    price = Math.min(price, seller.money, 80);
+    price = Math.max(price, 5);
+    const adjFactor = {easy:0.55, normal:0.74, hard:0.90}[C.diff];
+    return Math.max(5, Math.floor(price * adjFactor));
+  }
+
+  // LV4-5：跨對手 aiMax 感知定價
+  // Step 1: 估算每位對手對這張牌的理性出價上限
+  const opponentMaxes = G.players
+    .map((p,i)=>({ pid:i, p, mx: i===sellerPid ? 0 : aiMax(p, card, false) }))
+    .filter(x=>x.pid!==sellerPid);
+
+  // Step 2: 按出價意願排序，找出讓「至少 1 人購買」的最高可行定價
+  // 排序：aiMax 由高到低
+  opponentMaxes.sort((a,b)=>b.mx-a.mx);
+
+  // 最高願意支付的對手之 aiMax 是理論上限
+  const highestBuyerMax = opponentMaxes[0]?.mx || 10;
+
+  // Step 3: 風險分散考量
+  // 若最願意買的對手持有 2+ 張同畫家，賣給他是「幫助威脅方」
+  // 這種情況下，賣家應考慮定價稍高，讓他不那麼容易買走
+  // 但同時也有「賺到錢」的正向，所以只微調（±10%）
+  const topBuyer     = opponentMaxes[0];
+  let riskAdjust     = 1.0;
+  if(topBuyer && C.diff==='expert'){
+    const topBuyerOwned = topBuyer.p.bought.filter(c=>c.ai===card.ai).length;
+    // 若最高出價者持有 2+，他買了會更難被超越，略微提高售價讓其他人買
+    if(topBuyerOwned >= 2) riskAdjust = 1.08;
+  }
+  if(topBuyer && C.diff==='genius'){
+    const topBuyerOwned = topBuyer.p.bought.filter(c=>c.ai===card.ai).length;
+    // LV5 更精細：考量誰買對我們威脅最小
+    const leastThreatBuyer = [...opponentMaxes]
+      .sort((a,b)=>a.p.bought.filter(c=>c.ai===card.ai).length - b.p.bought.filter(c=>c.ai===card.ai).length)[0];
+    // 若最高出價者和威脅最小者不同，稍微抬高售價把牌賣給威脅較小的人
+    if(leastThreatBuyer && leastThreatBuyer.pid !== topBuyer.pid){
+      // 定價在「第二高出價者剛好能買，最高者也能買」的甜蜜點
+      riskAdjust = 0.97; // 略低讓更多人能買，從中選最不危險的
+    }
+    if(topBuyerOwned >= 2) riskAdjust *= 1.10;
+  }
+
+  // Step 4: 定價 = 最高 buyerMax 的 88-95%（確保他願意買），並加入 riskAdjust
+  const targetPct = C.diff==='genius' ? 0.92 : 0.88;
+  let price = Math.floor(highestBuyerMax * targetPct * riskAdjust);
+
+  // 安全下限：強制自購不虧太多
+  const selfBreakEven = Math.floor(ev.pPlace * (ev.cv + 25));
+  price = Math.max(price, Math.floor(selfBreakEven * 0.65));
+  price = Math.min(price, seller.money, 80);
+  price = Math.max(price, 5);
+
+  return price;
+}
+
+// ── CARD PLAY SCORER ─────────────────────────────
+function aiPlayCard(pid){
+  const ai  = G.players[pid];
+  const rnd = G.round;
+
+  // Pre-compute: does this player have any "pushable" artist (out>=1, has 2+ cards in hand)?
+  const pushableArtists = ARTISTS.map((_,aix)=>{
+    const out = G.rOut[aix];
+    const inHand = ai.hand.filter(c=>c.ai===aix).length;
+    return (out>=1 && inHand>=2) ? aix : -1;
+  }).filter(x=>x>=0);
+  const hasPushOption = pushableArtists.length > 0;
+
+  const scored = ai.hand.map(card=>{
+    let s = 0;
+    const aix     = card.ai;
+    const out     = G.rOut[aix];
+    const cv      = G.mvals[aix].reduce((a,b)=>a+b,0);
+    const owned   = ai.bought.filter(c=>c.ai===aix).length;
+    const handSame= ai.hand.filter(c=>c.ai===aix).length;
+    const ev      = artistEV(aix, 1);
+
+    // ── CONCENTRATION PENALTY ────────────────────
+    const concMult = rnd<=2 ? 0.15 : 0.30;
+    if(out>=3) s -= (out-2)*6*concMult;
+
+    // ── CALL ROUND ───────────────────────────────
+    // v10：整體 callRoundValue 閾值降低約 15%，讓 call round 更容易觸發
+    // LV1-4 各有明顯差距；LV4/5 加入更精準的時機條件
+    // 同時考量：前幾輪若浪費出牌造成第四輪手牌不足 → 第四輪強制提升 call 意願
+    if(out===4){
+      if(C.diff==='easy'){
+        // LV1：35% 機率觸發（原 30%，+5%），偶爾隨機 call
+        s += Math.random()<0.35 ? 10 : -2;
+      } else if(C.diff==='normal'){
+        // LV2：callMult 提高，整體更願意 call，但仍不太精算
+        const callMult = [0, 0.55, 0.72, 0.82, 0.92][rnd]||0.92;
+        const crv = aiCallRoundValue(ai, card);
+        // 降低觸發閾值：原本 crv>0 才 call，現在 crv>-5 就考慮
+        s += crv > -5 ? crv * callMult * 1.15 : crv * 0.5;
+      } else if(C.diff==='hard'){
+        // LV3：callMult 略提升，降低負值的抑制作用
+        const callMult = [0, 0.58, 0.75, 0.85, 0.92][rnd]||0.92;
+        const crv = aiCallRoundValue(ai, card);
+        s += crv * callMult * 1.12;
+      } else if(C.diff==='expert'){
+        // LV4：精確評估 + 特殊時機加分
+        // 條件一：第四輪手牌嚴重不足時（≤ 2 張），無論如何都更傾向 call
+        const handShortage = ai.hand.length <= 2 && rnd === 4;
+        const callMult = [0, 0.60, 0.78, 0.88, 0.94][rnd]||0.94;
+        const crv = aiCallRoundValue(ai, card);
+        // 手牌不足加成：第四輪沒牌打，call round 提前結算比拿爛牌好
+        const shortageBonus = handShortage ? 12 : 0;
+        // LV4 特殊時機：若此畫家在本輪已入圍且我持有 ≥ 2 張，強力加分
+        const wellPositioned = owned >= 2 && G.rOut[aix] >= 3;
+        const positionBonus = wellPositioned ? 8 : 0;
+        s += (crv + shortageBonus + positionBonus) * callMult * 1.10;
+      } else {
+        // LV5 天才：最精準評估 + 全局時機感知
+        const callMult = [0, 0.62, 0.80, 0.90, 0.96][rnd]||0.96;
+        const crv = aiCallRoundValue(ai, card);
+        // 天才特殊時機一：對手資金領先我 ≥ 40，call round 截斷對手收益
+        const oppMaxMoney = Math.max(...G.players.filter((_,i)=>i!==pid).map(p=>p.money));
+        const moneyPressure = oppMaxMoney - ai.money >= 40 ? 10 : 0;
+        // 天才特殊時機二：這是第四輪且場面對我有利（持有量最多）
+        const myBoughtAi = ai.bought.filter(c=>c.ai===aix).length;
+        const maxOppBoughtAi = Math.max(0,...G.players.filter((_,i)=>i!==pid).map(p=>p.bought.filter(c=>c.ai===aix).length));
+        const dominanceBonus = (rnd===4 && myBoughtAi > maxOppBoughtAi) ? 10 : 0;
+        // 手牌不足（第四輪）
+        const handShortage = ai.hand.length <= 2 && rnd === 4 ? 8 : 0;
+        s += (crv + moneyPressure + dominanceBonus + handShortage) * callMult * 1.08;
+      }
+    }
+
+    // ── NEW ARTIST BONUS (hand-context-aware) ────
+    if(out===0){
+      if(rnd<=2){
+        if(hasPushOption){
+          // I have better options — penalise opening a new door
+          s -= (C.diff==='easy'||C.diff==='normal') ? 2 : 8;
+        } else {
+          // No good push options, so opening is acceptable
+          s += cv>0 ? 6 : (2+Math.random()*4);
+        }
+      } else {
+        // Late rounds: strongly prefer artists already established
+        const openVal = cv>20 ? 3 : cv>0 ? -4 : -12;
+        s += openVal;
+        if(hasPushOption) s -= 5; // extra penalty if push option exists
+      }
+    }
+    // Small nudge toward less-played artists in rounds 1-2 only
+    if(rnd<=2 && out===1 && !hasPushOption) s += 3;
+
+    // ── PUSH OWNED ARTISTS ───────────────────────
+    if(owned>0 && out<4) s += owned*(3+out*1.2);
+
+    // ── DOUBLE CARDS — 重新設計時機評估（v10）─────
+    if(card.type==='double'){
+      const outAfterDouble = out + 1;
+
+      // LV1-2：早期輕微扣分（懶得算），晚期隨機出
+      if(C.diff==='easy'){
+        s += rnd<=2 ? -3 : 4 + Math.random()*5;
+      } else if(C.diff==='normal'){
+        s += rnd<=2 ? -6 : 3 + cv*0.06;
+      } else {
+        // LV3-5：完整的主動 Double 時機判斷
+        // ─ 條件一：是否有補牌能力（自己有同畫家非 Double 牌）
+        const hasPartner = ai.hand.some(c=>c.ai===aix&&c.type!=='double');
+        // ─ 條件二：場上時機（2-3 張是最佳出 Double 視窗）
+        const inGoodWindow = out >= 2 && out <= 3;
+        // ─ 條件三：我持有量夠確保入圍（持有 ≥ 2 更穩）
+        const wellInvested = owned >= 2 || (owned>=1 && cv>=20);
+        // ─ 條件四：出 Double 後達 4 張，任何人補牌即 call round
+        //   → 需要評估這個 call round 對我是否有利
+        const willHitFour = outAfterDouble === 4;
+        // ─ 條件五：對手手上有同畫家牌（他們可以補牌，改變 call round 時機）
+        const oppHandSame = G.players.filter((_,i)=>i!==pid)
+          .reduce((sum,p)=>sum+p.hand.filter(c=>c.ai===aix).length, 0);
+
+        // 基礎分：有時機視窗加分，沒有扣分
+        s += inGoodWindow ? (4 + cv*0.08 + ev.rawEV*0.05) : (rnd<=2 ? -14 : 2);
+
+        // 補牌能力：沒有 partner 大扣分（孤 Double 無法主動補牌）
+        if(!hasPartner) s -= 9;
+
+        // 主動出 Double 加分條件：補牌能力 + 充足投資 + 好時機
+        if(hasPartner && wellInvested && inGoodWindow) s += 10;
+
+        // 會達到 4 張的情境：精細評估
+        if(willHitFour){
+          // 近似 call round value（out 此時是 3，我們假設出牌後會是 4）
+          const callIsGood = wellInvested && (myTotalGain_approx(player, aix, snapshot_approx()) > 0);
+          if(callIsGood) s += 8;  // 主動觸發有利的 call round
+          else s -= 10;           // 可能觸發不利的 call round
+
+          // 對手手上有牌 → 他們可以補牌成拍賣人，奪走控制權
+          if(oppHandSame > 0 && C.diff!=='easy'){
+            // 若我投資充足，對手補牌反而讓我受益（他們當拍賣人收錢，但我持有的畫也會結算）
+            if(wellInvested) s -= oppHandSame * 2; // 輕微扣分（失去控制但我也有牌）
+            else s -= oppHandSame * 5;              // 重扣（我沒牌，對手掌控 call round）
+          }
+        }
+
+        // 三張時出 Double（outAfterDouble=4）是最高風險也最高報酬的時機
+        if(out === 3){
+          // 任何人補牌就 call round，需特別謹慎
+          if(!wellInvested) s -= 8; // 我投資不足時不應冒這個風險
+        }
+      }
+    }
+
+    // ── HAND MANAGEMENT (LV3+) + 一步前瞻序列評估（v10）─────
+    if(C.diff==='hard'||C.diff==='expert'||C.diff==='genius'){
+      // 避免孤 Double 衝上 4 張（前面已處理，此為輔助）
+      if(card.type==='double'){
+        const hasPartner = ai.hand.some(c=>c.ai===aix&&c.type!=='double');
+        if(!hasPartner) s -= 4; // 輕微追加，不重複計算
+      }
+      // Avoid being 1 card away from someone else calling round on us
+      if(out===3 && handSame>=2) s -= 7;
+      // Last round: prioritize high-EV cards
+      if(rnd===4) s += ev.rawEV * 0.22;
+      // Multi-round planning: moderate-cv artists are sweet spot
+      if(cv>=10&&cv<=40&&out<3) s += 4;
+      if(rnd>=3&&owned>0) s += owned*5;
+
+      // ── 一步前瞻序列評估（LV4+）──
+      // 評分：出這張牌後，手上剩餘牌中最好的那張的 rawEV 乘以折扣係數
+      // 目的：讓 AI 感知「現在出 Open 為之後的 Double 鋪路」的序列價值
+      // 例：手上有 Open + Double（同畫家），Open 評分時加入「之後 Double 更值錢」的前瞻加分
+      if(C.diff==='expert'||C.diff==='genius'){
+        // 模擬出這張牌後的手牌
+        const handAfter = ai.hand.filter((_,i)=>ai.hand[i]!==card);
+        if(handAfter.length > 0){
+          // 找出 handAfter 中同畫家的最優後續牌
+          const bestFollowUp = handAfter
+            .filter(c=>c.ai===aix) // 同畫家後續
+            .map(c=>{
+              let followScore = 0;
+              // Double 作為後續牌，若出這張 Open 後 out 會增加，Double 的時機更好
+              if(c.type==='double'){
+                const outAfterThis = out + 1; // 出了這張之後
+                // 序列加分：出 Open/Once 後再出 Double，比直接出 Double 更有策略價值
+                if(card.type!=='double' && outAfterThis>=2 && outAfterThis<=3){
+                  followScore += 8 + cv*0.08; // Open→Double 組合加分
+                }
+              }
+              return followScore;
+            })
+            .reduce((max,v)=>Math.max(max,v), 0);
+          // 一步前瞻：35% 折扣加到當前牌的分數
+          s += bestFollowUp * 0.35;
+        }
+      }
+    }
+
+    // ── GENIUS EXTRAS ────────────────────────────
+    if(C.diff==='genius'){
+      const oppBought = G.players.filter((_,i)=>i!==pid)
+        .reduce((sum,p)=>sum+p.bought.filter(c=>c.ai===aix).length, 0);
+      if(oppBought>0) s += oppBought*4;
+      const bigOppHolder = G.players.some(
+        (p,i)=>i!==pid && p.bought.filter(c=>c.ai===aix).length>=2
+      );
+      if(bigOppHolder && out===4){
+        if(owned>=1) s += 12;
+        else s += 5;
+      }
+      const totalHandCards = G.players.reduce((s,p)=>s+p.hand.length,0);
+      const approxTurnsLeft = Math.floor(totalHandCards/G.n);
+      if(approxTurnsLeft<=3 && ev.rawEV>15) s += 8;
+
+      // ── 精細截斷時機（v10 中期改進）──
+      // 截斷：主動出某畫家的牌，加速到 5 張結束本輪，阻止對手下輪繼續賣牌
+      // 最佳截斷視窗：場上 3-4 張 + 對手持有 ≥ 2 張 + 我自己 ≤ 1 張（否則是自傷）
+      // 玩家的風險：截斷本身也讓當前輪提前結束，若我自己有在這輪要賣的高 EV 牌，
+      // 截斷會讓我損失那些出牌機會（wastedTurnCost 概念）
+      const maxOppHoldingAi = Math.max(0, ...G.players
+        .filter((_,i)=>i!==pid)
+        .map(p=>p.bought.filter(c=>c.ai===aix).length));
+      const inCutoffWindow = out >= 3 && out <= 4 && maxOppHoldingAi >= 2 && owned <= 1;
+      if(inCutoffWindow){
+        // 估算截斷代價：我的手牌中還有多少高 EV 牌尚未出？
+        const myPendingEV = ai.hand
+          .filter(c=>c.ai!==aix) // 排除被截斷畫家的牌
+          .reduce((sum,c)=>sum + artistEV(c.ai,1).rawEV, 0);
+        const cutoffCost = Math.min(15, myPendingEV * 0.15); // 損失出牌機會的代價
+        // 截斷收益：阻止對手下輪拿到 ~rawEV × oppHolding 的收益
+        const cutoffBenefit = maxOppHoldingAi * artistEV(aix,0).rawEV * 0.4;
+        // 淨效益為正才截斷
+        if(cutoffBenefit > cutoffCost){
+          s += (cutoffBenefit - cutoffCost) * 0.5; // 折半加分（仍是近似評估）
+        }
+      }
+    }
+
+    // ── SYNERGY ──────────────────────────────────
+    s += Math.min(handSame,2)*1.5;
+
+    // ── NOISE ─────────────────────────────────────
+    const noiseMult = rnd<=2 ? 1.8 : rnd===3 ? 1.0 : 0.6;
+    s += Math.random()*{easy:18,normal:10,hard:4,expert:2,genius:1.0}[C.diff]*noiseMult;
+
+    return {card, s};
+  });
+
+  scored.sort((a,b)=>b.s-a.s);
+  let chosen = scored[0].card;
+
+  // ── FORCED-PLAY FALLBACK (LV3+) ──────────────
+  if((C.diff==='hard'||C.diff==='expert'||C.diff==='genius') && G.rOut[chosen.ai]===4){
+    const crv = aiCallRoundValue(ai, chosen);
+    if(crv < -5){
+      const safePicks = scored.filter(x=>G.rOut[x.card.ai]<4);
+      if(safePicks.length>0){
+        chosen = safePicks[0].card;
+      }
+    }
+  }
+
+  ai.hand.splice(ai.hand.indexOf(chosen),1);
+  ai.hand.sort((a,b)=>a.ai-b.ai);
+  initiatePlay(chosen, pid);
+}
+
+// ── 輔助函數：近似 call round 收益（供 Double 評估用）──────
+function myTotalGain_approx(player, triggerAi, snapshot){
+  const pid  = G.players.indexOf(player);
+  const cv   = G.mvals[triggerAi].reduce((a,b)=>a+b,0);
+  const rank = snapshot.findIndex(x=>x.oai===triggerAi);
+  const val  = rank>=0&&rank<=2 ? RVAL[rank] : 0;
+  return player.bought.filter(c=>c.ai===triggerAi).length * (cv + val);
+}
+function snapshot_approx(){
+  return ARTISTS.map((_,oai)=>({oai, cnt:G.rOut[oai], aOut:G.aOut[oai]}))
+    .filter(x=>x.cnt>0)
+    .sort((a,b)=>b.cnt-a.cnt || a.aOut-b.aOut);
+}
+
+// ══ AFTER AUCTION / ROUND END ══════════════════
+function afterAuction(sid){
+  G.auction=null;clearTmr();clearAutoPass();hideBidControls();renderAll();advanceTurn();
+}
+
+// Record earnings for item 8 — call when a sale completes
+// sellerPid earns +price, buyerPid pays -price (unless same, then bank pays)
+function recordEarning(sellerPid,buyerPid,price){
+  if(!G.roundEarnings) return;
+  if(sellerPid!==buyerPid) G.roundEarnings[sellerPid]+=price;
+  G.roundEarnings[buyerPid]-=price;
+}
+function advanceTurn(){G.turnIdx=(G.turnIdx+1)%G.n;setTimeout(nextTurn,350);}
+function roundEndCheck(card){
+  if(G.rOut[card.ai]>=5){
+    // Item 4: brief ceremony pause before modal
+    addLog(`★ ${as(card.ai)} 第5張！本回合結束`,false,true);
+    phase='end';
+    // Show a flash notification on the auction board
+    document.getElementById('ac-title').textContent=`${ARTISTS[card.ai]} — 第 ${G.round} 回合結束！`;
+    document.getElementById('ac-body').innerHTML=`
+      <div style="text-align:center;padding:1rem .5rem">
+        <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:${ACOL[card.ai]};margin-bottom:.5rem">${ARTISTS[card.ai]}</div>
+        <div style="font-size:.85rem;color:var(--ink2);margin-bottom:.3rem">第5張畫出現，本回合結束</div>
+        <div style="font-size:.72rem;color:var(--ink3)">正在計算排名…</div>
+      </div>`;
+    setTimeout(endRound, 1800); // longer pause for drama
+    return true;
+  }
+  return false;
+}
+
+function endRound(){
+  clearTmr();clearAutoPass();hideBidControls();
+  const ranked=ARTISTS.map((_,ai)=>({ai,cnt:G.rOut[ai]})).filter(x=>x.cnt>0).sort((a,b)=>b.cnt-a.cnt||a.ai-b.ai);
+  let rankMsg='';
+  ranked.forEach((x,r)=>{const v=RVAL[r]||0;G.mvals[x.ai].push(v);if(r<3&&v>0)rankMsg+=`${ARTISTS[x.ai]}:$${v} `;});
+  ARTISTS.forEach((_,ai)=>{if(G.mvals[ai].length<G.round)G.mvals[ai].push(0);});
+  addLog(`本輪 — ${rankMsg||'無排名'}`,false,true);
+  const payouts=G.players.map(p=>{
+    let e=0;p.bought.forEach(c=>{const r=ranked.findIndex(x=>x.ai===c.ai);if(r>=0&&r<3)e+=G.mvals[c.ai].reduce((a,b)=>a+b,0);});return e;
+  });
+  G.players.forEach((p,i)=>{if(payouts[i]>0)addLog(`${ns(p)} 收回 $${payouts[i]}`);p.money+=payouts[i];p.bought=[];});
+  G.rOut=ARTISTS.map(()=>0);
+
+  // Round summary modal — show player's own gain + total, hide others' totals (item 3 fix)
+  const me=G.players[0];const myGain=payouts[0];
+  const medals=['🥇','🥈','🥉',''];
+  // Rank by gain this round (not total money)
+  const byGain=[...G.players].map((p,i)=>({p,i,gain:payouts[i]})).sort((a,b)=>b.gain-a.gain);
+  const summaryRows=byGain.map((x,rank)=>{
+    const showTotal=x.i===0; // only show total for human player
+    return `<div class="rs-row${x.gain>0?' gain':''}">
+      <div class="rs-rank" style="background:${rank===0?'#B8912A':rank===1?'#8A9BA8':rank===2?'#9A7B5A':'rgba(0,0,0,.2)'}">${medals[rank]||rank+1}</div>
+      <div class="rs-name" style="color:${x.p.color}">${x.p.name}${x.p.human?' 👤':''}</div>
+      ${x.gain>0?`<div class="rs-gain">+$${x.gain}</div>`:`<div class="rs-zero">$0</div>`}
+      ${showTotal?`<div style="margin-left:auto;font-family:'Cormorant Garamond',serif;font-size:.95rem;font-weight:700;color:var(--gold);opacity:.8">→ $${x.p.money}</div>`:'<div style="margin-left:auto;font-size:.72rem;color:var(--ink3)">---</div>'}
+    </div>`;
+  }).join('');
+  const artistSummary=ranked.slice(0,3).map((x,r)=>`<span style="color:${ACOL[x.ai]};font-weight:700">${ARTISTS[x.ai]}</span><span style="color:var(--ink3);font-size:.75rem"> +$${RVAL[r]}</span>`).join(' &nbsp;›&nbsp; ');
+
+  if(G.round>=4){setTimeout(()=>{phase='end';showResult();},800);return;}
+  G.round++;dealRound();
+  G.roundEarnings=Array.from({length:G.n},()=>0); // reset for new round
+  // Rule: new round starts with player AFTER the one who ended the round
+  // G.turnIdx currently points to the player who just triggered round end
+  const nextStarter=(G.turnIdx+1)%G.n;
+  document.getElementById('m-icon').textContent='🔔';
+  document.getElementById('m-title').textContent=`第 ${G.round-1} 回合結束`;
+  document.getElementById('m-body').innerHTML=`<div style="margin-bottom:.3rem">本輪排名：</div><div style="font-size:.88rem;line-height:1.9">${artistSummary||'無排名'}</div>`;
+  document.getElementById('m-extra').innerHTML=`<div class="rs-header">本輪收益排行</div>${summaryRows}`;
+  document.getElementById('m-btns').innerHTML=`<button class="mbtn pri" onclick="closeModal();renderAll();phase='play';G.turnIdx=${nextStarter};nextTurn()">第 ${G.round} 回合開始 →</button>`;
+  document.getElementById('modal').classList.add('show');
+}
+
+function showResult(){
+  const sorted=[...G.players].sort((a,b)=>b.money-a.money);
+  const medals=['🥇','🥈','🥉',''];
+
+  // Player rankings
+  const playerRows=sorted.map((p,i)=>{
+    return `<div class="res-row${i===0?' winner':''}">
+      <div class="rr-rk" style="background:${i===0?'#B8912A':i===1?'#8A9BA8':i===2?'#9A7B5A':'rgba(255,255,255,.1)'};color:white">${medals[i]||i+1}</div>
+      <div class="rr-info"><div class="rr-name" style="color:${p.color}">${p.name}${p.human?' 👤':''}</div></div>
+      <div class="rr-money">$${p.money}</div>
+    </div>`;
+  }).join('');
+
+  // Artist stats — total value accumulated and total cards played
+  const artistStats=ARTISTS.map((_,ai)=>{
+    const totalVal=G.mvals[ai].reduce((a,b)=>a+b,0);
+    const roundVals=G.mvals[ai].map((v,r)=>`<span style="font-size:.58rem;padding:1px 4px;border-radius:3px;background:${v===30?'#B8912A22':v===20?'#6A8AA422':v===10?'#8A7B5A22':'transparent'};color:${v>0?ACOL[ai]:'var(--ink3)'}">${v||'·'}</span>`).join('');
+    return `<div style="display:flex;align-items:center;gap:.5rem;padding:.35rem .5rem;border-radius:7px;background:rgba(255,255,255,.04);margin-bottom:.28rem">
+      <div style="width:10px;height:10px;border-radius:50%;background:${ACOL[ai]};flex-shrink:0"></div>
+      <div style="font-family:'Playfair Display',serif;font-size:.82rem;color:rgba(255,255,255,.78);flex:1">${ARTISTS[ai]}</div>
+      <div style="display:flex;gap:3px;align-items:center">${roundVals}</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:${totalVal>0?ACOL[ai]:'rgba(255,255,255,.25)'};min-width:36px;text-align:right">${totalVal>0?'$'+totalVal:'—'}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('res-list').innerHTML=`
+    ${playerRows}
+    <div style="margin-top:1.2rem;margin-bottom:.4rem;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3)">畫家累積價值</div>
+    ${artistStats}`;
+  showScreen('result');
+}
+
+// ══ TIMER / AUTOPASS ═══════════════════════════
+function clearAutoPass(){if(autoPassTimer){clearTimeout(autoPassTimer);autoPassTimer=null;}}
+function clearTmr(){if(timerID){clearInterval(timerID);timerID=null;}}
+
+// ══ LOG HELPERS ════════════════════════════════
+// ns = name span, as = artist span
+function ns(p){return`<span style="color:${p.color};font-weight:600">${p.name}</span>`;}
+function as(ai){return`<span style="color:${ACOL[ai]};font-weight:700">${ARTISTS[ai]}</span>`;}
+function addLog(html,mine=false,sys=false,won=false,sold=false){
+  const el=document.getElementById('log');if(!el)return;
+  const d=document.createElement('div');
+  let cls='log-line';
+  if(won)cls+=' won';else if(sold)cls+=' sold';else if(mine)cls+=' mine';else if(sys)cls+=' sys';
+  d.className=cls;d.innerHTML=`<div class="log-dot"></div><span>${html}</span>`;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+  while(el.children.length>80)el.removeChild(el.firstChild);
+}
+
+// ══ MODAL ══════════════════════════════════════
+function showModal(icon,title,body,extra,btns){
+  document.getElementById('m-icon').textContent=icon;
+  document.getElementById('m-title').textContent=title;
+  document.getElementById('m-body').textContent=body;
+  document.getElementById('m-extra').innerHTML=extra||'';
+  document.getElementById('m-btns').innerHTML=btns;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+window.closeModal=closeModal;
+function confirmQuit(){
+  showModal('🚪','退出遊戲','確定退出？進度不會儲存。','',
+    `<button class="mbtn sec" onclick="closeModal()">繼續遊戲</button><button class="mbtn red" onclick="location.reload()">退出</button>`);
+}
+</script>
+</body>
+</html>
